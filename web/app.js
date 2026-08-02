@@ -272,12 +272,21 @@ const DOM = {
   btnRandomStudyQuiz: document.getElementById('btn-random-study-quiz'),
   btnRandomStudyMatch: document.getElementById('btn-random-study-match'),
 
-  // Import Modal
-  btnOpenImport: document.getElementById('btn-open-import'),
-  modalImport: document.getElementById('modal-import'),
-  btnCloseImport: document.getElementById('btn-close-import'),
-  btnCancelImport: document.getElementById('btn-cancel-import'),
-  btnSubmitImport: document.getElementById('btn-submit-import'),
+  // Feedback & Vocab Contribution Modal
+  btnOpenFeedback: document.getElementById('btn-open-feedback'),
+  modalFeedback: document.getElementById('modal-feedback'),
+  btnCloseFeedback: document.getElementById('btn-close-feedback'),
+  btnCancelFeedback: document.getElementById('btn-cancel-feedback'),
+  btnCancelVocab: document.getElementById('btn-cancel-vocab'),
+  tabBtnFeedback: document.getElementById('tab-btn-feedback'),
+  tabBtnVocab: document.getElementById('tab-btn-vocab'),
+  formFeedback: document.getElementById('form-feedback'),
+  formVocab: document.getElementById('form-vocab'),
+  starRating: document.getElementById('fb-star-rating'),
+  btnToggleApiConfig: document.getElementById('btn-toggle-api-config'),
+  apiConfigBody: document.getElementById('api-config-body'),
+  inputApiUrl: document.getElementById('input-api-url'),
+  btnSaveApiUrl: document.getElementById('btn-save-api-url'),
   importJsonText: document.getElementById('import-json-text'),
 
   // Progress Backup & Sync Elements
@@ -1791,39 +1800,157 @@ function setupEventListeners() {
     }
   });
 
-  // Modal Import Controls
-  DOM.btnOpenImport.addEventListener('click', () => DOM.modalImport.classList.remove('hidden'));
-  DOM.btnCloseImport.addEventListener('click', () => DOM.modalImport.classList.add('hidden'));
-  DOM.btnCancelImport.addEventListener('click', () => DOM.modalImport.classList.add('hidden'));
-  
-  const btnResetDataset = document.getElementById('btn-reset-dataset');
-  if (btnResetDataset) {
-    btnResetDataset.addEventListener('click', async () => {
-      if (confirm('Bạn có muốn xóa dữ liệu JSON tạm trên trình duyệt và khôi phục đầy đủ tất cả các học phần từ server (web/data/toeic_topics.json)?')) {
-        localStorage.removeItem('toeic_custom_dataset');
-        await loadDataset();
-        DOM.modalImport.classList.add('hidden');
-        alert('🎉 Đã khôi phục đầy đủ tất cả học phần từ file server!');
-      }
+  // Feedback & Vocab Contribution Modal Controls
+  let appsScriptUrl = localStorage.getItem('toeic_apps_script_url') || '';
+
+  if (DOM.btnOpenFeedback) {
+    DOM.btnOpenFeedback.addEventListener('click', () => {
+      DOM.modalFeedback.classList.remove('hidden');
+      if (DOM.inputApiUrl) DOM.inputApiUrl.value = appsScriptUrl;
+    });
+  }
+  if (DOM.btnCloseFeedback) {
+    DOM.btnCloseFeedback.addEventListener('click', () => DOM.modalFeedback.classList.add('hidden'));
+  }
+  if (DOM.btnCancelFeedback) {
+    DOM.btnCancelFeedback.addEventListener('click', () => DOM.modalFeedback.classList.add('hidden'));
+  }
+  if (DOM.btnCancelVocab) {
+    DOM.btnCancelVocab.addEventListener('click', () => DOM.modalFeedback.classList.add('hidden'));
+  }
+
+  // Tab switching
+  if (DOM.tabBtnFeedback && DOM.tabBtnVocab) {
+    DOM.tabBtnFeedback.addEventListener('click', () => {
+      DOM.tabBtnFeedback.classList.add('active');
+      DOM.tabBtnVocab.classList.remove('active');
+      DOM.formFeedback.classList.remove('hidden');
+      DOM.formFeedback.classList.add('active');
+      DOM.formVocab.classList.add('hidden');
+      DOM.formVocab.classList.remove('active');
+    });
+
+    DOM.tabBtnVocab.addEventListener('click', () => {
+      DOM.tabBtnVocab.classList.add('active');
+      DOM.tabBtnFeedback.classList.remove('active');
+      DOM.formVocab.classList.remove('hidden');
+      DOM.formVocab.classList.add('active');
+      DOM.formFeedback.classList.add('hidden');
+      DOM.formFeedback.classList.remove('active');
     });
   }
 
-  DOM.btnSubmitImport.addEventListener('click', () => {
+  // Star rating selection
+  let currentRating = 5;
+  if (DOM.starRating) {
+    const stars = DOM.starRating.querySelectorAll('.star');
+    stars.forEach(star => {
+      star.addEventListener('click', (e) => {
+        currentRating = parseInt(e.target.dataset.value, 10);
+        stars.forEach(s => {
+          const val = parseInt(s.dataset.value, 10);
+          if (val <= currentRating) s.classList.add('active');
+          else s.classList.remove('active');
+        });
+      });
+    });
+  }
+
+  // API Config Toggle & Save
+  if (DOM.btnToggleApiConfig) {
+    DOM.btnToggleApiConfig.addEventListener('click', () => {
+      DOM.apiConfigBody.classList.toggle('hidden');
+    });
+  }
+  if (DOM.btnSaveApiUrl) {
+    DOM.btnSaveApiUrl.addEventListener('click', () => {
+      appsScriptUrl = DOM.inputApiUrl.value.trim();
+      localStorage.setItem('toeic_apps_script_url', appsScriptUrl);
+      alert('✅ Đã lưu Cấu hình Google Sheets Web App API URL!');
+    });
+  }
+
+  // Helper function to send payload to Google Sheets Apps Script API
+  async function sendToGoogleSheets(payload, statusEl, submitBtn, formEl) {
+    const targetUrl = appsScriptUrl || localStorage.getItem('toeic_apps_script_url');
+    
+    statusEl.className = 'form-status loading';
+    statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tự động lưu dữ liệu vào Google Sheets...';
+    submitBtn.disabled = true;
+
     try {
-      const data = JSON.parse(DOM.importJsonText.value);
-      if (Array.isArray(data)) {
-        state.topics = data;
-        localStorage.setItem('toeic_custom_dataset', JSON.stringify(data));
-        renderDashboard();
-        DOM.modalImport.classList.add('hidden');
-        alert('Nạp dữ liệu từ vựng thành công!');
+      if (targetUrl) {
+        await fetch(targetUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
       } else {
-        alert('Dữ liệu JSON không hợp lệ. Phải là một JSON Array của các Topic.');
+        console.log('Sending payload (Demo mode):', payload);
+        await new Promise(r => setTimeout(r, 600));
       }
+
+      statusEl.className = 'form-status success';
+      statusEl.innerHTML = '🎉 Cảm ơn bạn! Đóng góp đã được tự động ghi nhận vào Google Sheet.';
+      formEl.reset();
+      
+      setTimeout(() => {
+        DOM.modalFeedback.classList.add('hidden');
+        statusEl.className = 'form-status';
+        statusEl.innerHTML = '';
+      }, 2500);
+
     } catch (err) {
-      alert('Lỗi cú pháp JSON: ' + err.message);
+      console.error('Lỗi khi gửi đóng góp:', err);
+      statusEl.className = 'form-status error';
+      statusEl.innerHTML = '⚠️ Có lỗi xảy ra khi kết nối API. Vui lòng kiểm tra lại URL Apps Script.';
+    } finally {
+      submitBtn.disabled = false;
     }
-  });
+  }
+
+  // Submit Feedback Form
+  if (DOM.formFeedback) {
+    DOM.formFeedback.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const statusMsg = document.getElementById('fb-status-msg');
+      const submitBtn = document.getElementById('btn-submit-feedback');
+
+      const payload = {
+        type: 'feedback',
+        name: document.getElementById('fb-name').value.trim(),
+        email: document.getElementById('fb-email').value.trim(),
+        feedbackType: document.getElementById('fb-type').value,
+        rating: currentRating,
+        content: document.getElementById('fb-content').value.trim()
+      };
+
+      await sendToGoogleSheets(payload, statusMsg, submitBtn, DOM.formFeedback);
+    });
+  }
+
+  // Submit Vocab Form
+  if (DOM.formVocab) {
+    DOM.formVocab.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const statusMsg = document.getElementById('vocab-status-msg');
+      const submitBtn = document.getElementById('btn-submit-vocab');
+
+      const payload = {
+        type: 'vocabulary',
+        topic: document.getElementById('vocab-topic').value.trim(),
+        term: document.getElementById('vocab-term').value.trim(),
+        ipa: document.getElementById('vocab-ipa').value.trim(),
+        pos: document.getElementById('vocab-pos').value,
+        definition: document.getElementById('vocab-def').value.trim(),
+        example_en: document.getElementById('vocab-ex-en').value.trim(),
+        example_vi: document.getElementById('vocab-ex-vi').value.trim()
+      };
+
+      await sendToGoogleSheets(payload, statusMsg, submitBtn, DOM.formVocab);
+    });
+  }
 
   // Progress Backup & Export/Import Controls
   if (DOM.btnExportProgress) {

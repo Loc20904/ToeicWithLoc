@@ -87,8 +87,8 @@
           </div>
         </div>
 
-        <button class="btn-import-data" id="btn-open-import">
-          <i class="fa-solid fa-file-import"></i> Nạp Dữ Liệu JSON
+        <button class="btn-import-data" id="btn-open-feedback" style="background: linear-gradient(135deg, #4f46e5 0%, #059669 100%); border: none;">
+          <i class="fa-solid fa-lightbulb"></i> Đóng Góp & Góp Ý
         </button>
       </div>
     </aside>
@@ -558,23 +558,144 @@
     </main>
   </div>
 
-  <!-- Modal Import Data -->
-  <div class="modal-backdrop hidden" id="modal-import">
-    <div class="modal-content">
+  <!-- Modal Đóng Góp & Góp Ý -->
+  <div class="modal-backdrop hidden" id="modal-feedback">
+    <div class="modal-content modal-feedback-content">
       <div class="modal-header">
-        <h3><i class="fa-solid fa-file-import"></i> Nạp Dữ Liệu Từ Vựng Custom (JSON)</h3>
-        <button class="btn-close-modal" id="btn-close-import">&times;</button>
+        <h3><i class="fa-solid fa-comments"></i> Đóng Góp & Góp Ý Hệ Thống</h3>
+        <button class="btn-close-modal" id="btn-close-feedback">&times;</button>
       </div>
+
+      <!-- Tab Navigation -->
+      <div class="modal-tabs">
+        <button class="tab-btn active" id="tab-btn-feedback">
+          <i class="fa-solid fa-comment-dots"></i> Góp Ý Hệ Thống
+        </button>
+        <button class="tab-btn" id="tab-btn-vocab">
+          <i class="fa-solid fa-book-bookmark"></i> Đóng Góp Từ Vựng
+        </button>
+      </div>
+
       <div class="modal-body">
-        <p>Dán chuỗi JSON danh sách từ vựng hoặc nạp file JSON xuất từ script Python:</p>
-        <textarea id="import-json-text" placeholder='[{"topic_id": "custom", "topic_name": "Tự chọn", "words": [...]}]'></textarea>
-      </div>
-      <div class="modal-footer" style="display: flex; justify-content: space-between; gap: 10px;">
-        <button class="btn-secondary" id="btn-reset-dataset" style="color: #ff4d4f; border-color: rgba(255,77,79,0.3);"><i class="fa-solid fa-rotate-left"></i> Khôi phục dữ liệu từ server (Xóa JSON tạm)</button>
-        <div style="display: flex; gap: 8px;">
-          <button class="btn-secondary" id="btn-cancel-import">Hủy</button>
-          <button class="btn-primary" id="btn-submit-import">Nạp Dữ Liệu</button>
+        <!-- Tab Content 1: System Feedback -->
+        <form class="tab-content active" id="form-feedback">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fb-name">Họ và tên (Tùy chọn)</label>
+              <input type="text" id="fb-name" placeholder="Ví dụ: Nguyễn Văn A" />
+            </div>
+            <div class="form-group">
+              <label for="fb-email">Email liên hệ (Tùy chọn)</label>
+              <input type="email" id="fb-email" placeholder="name@example.com" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="fb-type">Loại đóng góp</label>
+              <select id="fb-type">
+                <option value="Góp ý tính năng mới">💡 Đề xuất tính năng mới</option>
+                <option value="Báo lỗi hệ thống">⚠️ Báo lỗi (Bug)</option>
+                <option value="Ý kiến khác">💬 Ý kiến đóng góp khác</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Đánh giá trải nghiệm</label>
+              <div class="star-rating" id="fb-star-rating">
+                <i class="fa-solid fa-star star" data-value="1"></i>
+                <i class="fa-solid fa-star star" data-value="2"></i>
+                <i class="fa-solid fa-star star" data-value="3"></i>
+                <i class="fa-solid fa-star star" data-value="4"></i>
+                <i class="fa-solid fa-star star active" data-value="5"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="fb-content">Nội dung góp ý <span class="required">*</span></label>
+            <textarea id="fb-content" rows="4" placeholder="Chia sẻ suy nghĩ hoặc ý kiến của bạn về ứng dụng..." required></textarea>
+          </div>
+
+          <div class="form-status" id="fb-status-msg"></div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" id="btn-cancel-feedback">Hủy</button>
+            <button type="submit" class="btn-primary" id="btn-submit-feedback">
+              <i class="fa-solid fa-paper-plane"></i> Gửi Góp Ý
+            </button>
+          </div>
+        </form>
+
+        <!-- Tab Content 2: Vocab Contribution -->
+        <form class="tab-content hidden" id="form-vocab">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="vocab-topic">Chủ đề TOEIC <span class="required">*</span></label>
+              <input type="text" id="vocab-topic" placeholder="Ví dụ: Business Contracts, Office Life..." required />
+            </div>
+            <div class="form-group">
+              <label for="vocab-term">Từ vựng (Term) <span class="required">*</span></label>
+              <input type="text" id="vocab-term" placeholder="Ví dụ: negotiate" required />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="vocab-ipa">Phiên âm (IPA)</label>
+              <input type="text" id="vocab-ipa" placeholder="Ví dụ: /nɪˈɡəʊ.ʃi.eɪt/" />
+            </div>
+            <div class="form-group">
+              <label for="vocab-pos">Từ loại (Part of Speech)</label>
+              <select id="vocab-pos">
+                <option value="verb">Động từ (v.)</option>
+                <option value="noun">Danh từ (n.)</option>
+                <option value="adjective">Tính từ (adj.)</option>
+                <option value="adverb">Trạng từ (adv.)</option>
+                <option value="phrase">Cụm từ (phrase)</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="vocab-def">Định nghĩa tiếng Việt <span class="required">*</span></label>
+            <input type="text" id="vocab-def" placeholder="Ví dụ: đàm phán, thương lượng" required />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="vocab-ex-en">Ví dụ tiếng Anh</label>
+              <textarea id="vocab-ex-en" rows="2" placeholder="Ví dụ: The two companies managed to negotiate a fair deal."></textarea>
+            </div>
+            <div class="form-group">
+              <label for="vocab-ex-vi">Dịch ví dụ tiếng Việt</label>
+              <textarea id="vocab-ex-vi" rows="2" placeholder="Ví dụ: Hai công ty đã đàm phán thành công một thỏa thuận công bằng."></textarea>
+            </div>
+          </div>
+
+          <div class="form-status" id="vocab-status-msg"></div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn-secondary" id="btn-cancel-vocab">Hủy</button>
+            <button type="submit" class="btn-primary" id="btn-submit-vocab">
+              <i class="fa-solid fa-plus-circle"></i> Đóng Góp Từ Vựng
+            </button>
+          </div>
+        </form>
+
+        <!-- Google Apps Script Settings Toggle -->
+        <div class="api-config-section">
+          <button type="button" class="btn-link-config" id="btn-toggle-api-config">
+            <i class="fa-solid fa-gear"></i> Cấu hình Google Sheets Web App API URL
+          </button>
+          <div class="api-config-body hidden" id="api-config-body">
+            <p class="config-desc">Nhập Web App URL từ Google Apps Script của bạn để lưu dữ liệu đóng góp vào Google Sheet cá nhân:</p>
+            <div class="api-input-group">
+              <input type="url" id="input-api-url" placeholder="https://script.google.com/macros/s/.../exec" />
+              <button type="button" class="btn-secondary btn-sm" id="btn-save-api-url">Lưu URL</button>
+            </div>
+          </div>
         </div>
+
       </div>
     </div>
   </div>
