@@ -75,6 +75,11 @@ body {
 /* Sidebar Styles */
 .sidebar {
   width: 270px;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  overflow-y: auto;
   background-color: var(--bg-secondary);
   border-right: 1px solid var(--border-color);
   display: flex;
@@ -83,8 +88,19 @@ body {
   z-index: 100;
 }
 
+.main-content {
+  margin-left: 270px;
+  flex: 1;
+  transition: var(--transition-normal);
+}
+
 .sidebar.collapsed {
-  margin-left: -270px;
+  transform: translateX(-270px);
+  margin-left: 0;
+}
+
+.sidebar.collapsed ~ .main-content {
+  margin-left: 0;
 }
 
 .sidebar-header {
@@ -2143,10 +2159,19 @@ kbd {
    MODAL FEEDBACK & VOCAB CONTRIBUTION STYLES
    ---------------------------------------------------- */
 .modal-feedback-content {
-  max-width: 640px !important;
+  max-width: 680px !important;
   width: 92%;
+  max-height: 88vh;
   border-radius: 16px;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-feedback-content .modal-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: 20px;
 }
 
 .modal-tabs {
@@ -2350,6 +2375,100 @@ kbd {
 .btn-sm {
   padding: 6px 12px !important;
   font-size: 0.8rem !important;
+}
+
+/* Batch Vocab Contribution Styles */
+.vocab-batch-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+  margin-bottom: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.vocab-batch-count {
+  background: rgba(79, 70, 229, 0.12);
+  color: var(--accent-primary, #4f46e5);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+}
+
+.vocab-words-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.word-card-item {
+  background: var(--bg-main, #f8fafc);
+  border: 1px solid var(--border-color, #e2e8f0);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+
+.word-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px dashed var(--border-color, #e2e8f0);
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+}
+
+.word-card-title {
+  font-weight: 700;
+  font-size: 0.88rem;
+  color: var(--accent-primary, #4f46e5);
+}
+
+.btn-remove-word {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+  border: none;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  font-size: 1.1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.btn-remove-word:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.btn-add-word-row {
+  background: rgba(79, 70, 229, 0.08);
+  color: var(--accent-primary, #4f46e5);
+  border: 1px dashed var(--accent-primary, #4f46e5);
+  border-radius: 10px;
+  padding: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  transition: all 0.2s ease;
+  margin-bottom: 10px;
+}
+
+.btn-add-word-row:hover {
+  background: rgba(79, 70, 229, 0.15);
 }
 
 

@@ -1930,25 +1930,134 @@ function setupEventListeners() {
     });
   }
 
-  // Submit Vocab Form
+  // Dynamic Batch Vocab Rows Manager
+  const vocabWordsList = document.getElementById('vocab-words-list');
+  const btnAddWordRow = document.getElementById('btn-add-word-row');
+  const vocabBatchCount = document.getElementById('vocab-batch-count');
+
+  function updateBatchCount() {
+    if (!vocabWordsList || !vocabBatchCount) return;
+    const cards = vocabWordsList.querySelectorAll('.word-card-item');
+    vocabBatchCount.textContent = `${cards.length} từ`;
+
+    // Update word titles & delete button visibility
+    cards.forEach((card, idx) => {
+      const titleEl = card.querySelector('.word-card-title');
+      const removeBtn = card.querySelector('.btn-remove-word');
+      if (titleEl) titleEl.innerHTML = `<i class="fa-solid fa-font"></i> Từ vựng #${idx + 1}`;
+      if (removeBtn) {
+        if (cards.length > 1) removeBtn.classList.remove('hidden');
+        else removeBtn.classList.add('hidden');
+      }
+    });
+  }
+
+  if (btnAddWordRow && vocabWordsList) {
+    btnAddWordRow.addEventListener('click', () => {
+      const currentCards = vocabWordsList.querySelectorAll('.word-card-item');
+      const newIndex = currentCards.length;
+      
+      const newCard = document.createElement('div');
+      newCard.className = 'word-card-item';
+      newCard.dataset.index = newIndex;
+      newCard.innerHTML = `
+        <div class="word-card-header">
+          <span class="word-card-title"><i class="fa-solid fa-font"></i> Từ vựng #${newIndex + 1}</span>
+          <button type="button" class="btn-remove-word" title="Xóa từ này">&times;</button>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Từ vựng (Term) <span class="required">*</span></label>
+            <input type="text" class="input-vocab-term" placeholder="Ví dụ: negotiate" required />
+          </div>
+          <div class="form-group">
+            <label>Từ loại</label>
+            <select class="input-vocab-pos">
+              <option value="v.">Động từ (v.)</option>
+              <option value="n.">Danh từ (n.)</option>
+              <option value="adj.">Tính từ (adj.)</option>
+              <option value="adv.">Trạng từ (adv.)</option>
+              <option value="phrase">Cụm từ (phrase)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Định nghĩa tiếng Việt <span class="required">*</span></label>
+          <input type="text" class="input-vocab-def" placeholder="Ví dụ: đàm phán, thương lượng" required />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Ví dụ minh họa</label>
+            <input type="text" class="input-vocab-ex" placeholder="Ví dụ: They negotiated a new contract." />
+          </div>
+          <div class="form-group">
+            <label>Link Hình ảnh (Image URL)</label>
+            <input type="url" class="input-vocab-img" placeholder="https://example.com/image.jpg" />
+          </div>
+        </div>
+      `;
+
+      vocabWordsList.appendChild(newCard);
+      updateBatchCount();
+    });
+
+    // Remove word card delegation
+    vocabWordsList.addEventListener('click', (e) => {
+      if (e.target.classList.contains('btn-remove-word')) {
+        const card = e.target.closest('.word-card-item');
+        if (card) {
+          card.remove();
+          updateBatchCount();
+        }
+      }
+    });
+  }
+
+  // Submit Vocab Form (Batch)
   if (DOM.formVocab) {
     DOM.formVocab.addEventListener('submit', async (e) => {
       e.preventDefault();
       const statusMsg = document.getElementById('vocab-status-msg');
       const submitBtn = document.getElementById('btn-submit-vocab');
+      const topic = document.getElementById('vocab-topic').value.trim();
+
+      const wordCards = vocabWordsList ? vocabWordsList.querySelectorAll('.word-card-item') : [];
+      const words = [];
+
+      wordCards.forEach(card => {
+        const term = card.querySelector('.input-vocab-term')?.value.trim() || '';
+        const pos = card.querySelector('.input-vocab-pos')?.value || '';
+        const definition = card.querySelector('.input-vocab-def')?.value.trim() || '';
+        const example = card.querySelector('.input-vocab-ex')?.value.trim() || '';
+        const image = card.querySelector('.input-vocab-img')?.value.trim() || '';
+
+        if (term || definition) {
+          words.push({ term, pos, definition, example, image });
+        }
+      });
+
+      if (words.length === 0) {
+        alert('Vui lòng nhập ít nhất 1 từ vựng!');
+        return;
+      }
 
       const payload = {
         type: 'vocabulary',
-        topic: document.getElementById('vocab-topic').value.trim(),
-        term: document.getElementById('vocab-term').value.trim(),
-        ipa: document.getElementById('vocab-ipa').value.trim(),
-        pos: document.getElementById('vocab-pos').value,
-        definition: document.getElementById('vocab-def').value.trim(),
-        example_en: document.getElementById('vocab-ex-en').value.trim(),
-        example_vi: document.getElementById('vocab-ex-vi').value.trim()
+        topic: topic,
+        words: words
       };
 
       await sendToGoogleSheets(payload, statusMsg, submitBtn, DOM.formVocab);
+
+      // Reset dynamic cards to 1 card after success
+      if (vocabWordsList) {
+        const cards = vocabWordsList.querySelectorAll('.word-card-item');
+        for (let i = 1; i < cards.length; i++) cards[i].remove();
+        updateBatchCount();
+      }
     });
   }
 

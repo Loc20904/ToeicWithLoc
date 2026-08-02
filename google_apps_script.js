@@ -1,35 +1,30 @@
 /**
  * GOOGLE APPS SCRIPT FOR TOEIC VOCAB MASTER
- * Tự động tiếp nhận Đóng góp Ý kiến và Từ vựng TOEIC từ trang web và lưu vào Google Sheets.
+ * Tự động tiếp nhận Góp ý và Đóng góp Từ vựng TOEIC lưu trực tiếp vào 2 Google Sheet riêng biệt.
  * 
- * HƯỚNG DẪN CẤU HÌNH:
- * 1. Tạo 1 file Google Sheet mới tại https://sheets.new
- * 2. Đặt tên Bảng tính tùy ý (ví dụ: TOEIC Vocab Feedback Data)
- * 3. Vào menu: Tiện ích mở rộng (Extensions) -> Apps Script
- * 4. Xóa hết code cũ, dán toàn bộ đoạn code bên dưới vào và bấm lưu (Ctrl + S).
- * 5. Bấm nút "Triển khai" (Deploy) -> "Triển khai dưới dạng ứng dụng web" (New deployment -> Web app)
- * 6. Cấu hình:
- *    - Mô tả: TOEIC Feedback Web API
- *    - Thực thi dưới dạng (Execute as): Tôi (Me)
- *    - Ai có quyền truy cập (Who has access): Bất kỳ ai (Anyone)
- * 7. Bấm "Triển khai" (Deploy) -> Cấp quyền truy cập (Grant access) -> Sao chép URL Ứng dụng Web (Web App URL).
- * 8. Dán URL vừa sao chép vào phần Cấu hình API trên trang web TOEIC Vocab Master!
+ * SPREADSHEETS LIÊN KẾT:
+ * 1. Sheet Feedback: https://docs.google.com/spreadsheets/d/1WELlctXST5g26iUexZ-fWjI3uQzejwxHOEIcDbIZMRM/edit
+ * 2. Sheet Vocab: https://docs.google.com/spreadsheets/d/1lAbnTaYAOEFvaaM9sYGaFr1Bm2DQ12C63_lTEAR5ahQ/edit
  */
+
+var FEEDBACK_SPREADSHEET_ID = "1WELlctXST5g26iUexZ-fWjI3uQzejwxHOEIcDbIZMRM";
+var VOCAB_SPREADSHEET_ID    = "1lAbnTaYAOEFvaaM9sYGaFr1Bm2DQ12C63_lTEAR5ahQ";
 
 function doPost(e) {
   try {
     var contents = e.postData.contents;
     var data = JSON.parse(contents);
-    var ss = SpreadsheetApp.getActiveSpreadsheet();
     
     // ----------------------------------------------------
-    // XỬ LÝ GÓP Ý HỆ THỐNG (SYSTEM FEEDBACK)
+    // 1. XỬ LÝ GÓP Ý HỆ THỐNG (SYSTEM FEEDBACK)
     // ----------------------------------------------------
     if (data.type === 'feedback') {
-      var sheetFeedback = ss.getSheetByName("Góp Ý Hệ Thống");
-      if (!sheetFeedback) {
-        sheetFeedback = ss.insertSheet("Góp Ý Hệ Thống");
-        sheetFeedback.appendRow([
+      var ssFeedback = SpreadsheetApp.openById(FEEDBACK_SPREADSHEET_ID);
+      var sheetFB = ssFeedback.getSheets()[0];
+      
+      // Nếu sheet trống, ghi hàng tiêu đề
+      if (sheetFB.getLastRow() === 0) {
+        sheetFB.appendRow([
           "Thời gian (Timestamp)", 
           "Loại góp ý (Type)", 
           "Họ tên (Name)", 
@@ -37,10 +32,10 @@ function doPost(e) {
           "Đánh giá (Rating)", 
           "Nội dung góp ý (Content)"
         ]);
-        sheetFeedback.getRange(1, 1, 1, 6).setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
+        sheetFB.getRange(1, 1, 1, 6).setFontWeight("bold").setBackground("#4f46e5").setFontColor("#ffffff");
       }
       
-      sheetFeedback.appendRow([
+      sheetFB.appendRow([
         new Date().toLocaleString("vi-VN"),
         data.feedbackType || "Góp ý chung",
         data.name || "Ẩn danh",
@@ -56,52 +51,53 @@ function doPost(e) {
     }
     
     // ----------------------------------------------------
-    // XỬ LÝ ĐÓNG GÓP TỪ VỰNG TOEIC (VOCAB CONTRIBUTION)
+    // 2. XỬ LÝ ĐÓNG GÓP TỪ VỰNG TOEIC (VOCAB BATCH SUBMISSION)
     // ----------------------------------------------------
     if (data.type === 'vocabulary') {
-      var sheetVocab = ss.getSheetByName("Từ Vựng Đóng Góp");
-      if (!sheetVocab) {
-        sheetVocab = ss.insertSheet("Từ Vựng Đóng Góp");
+      var ssVocab = SpreadsheetApp.openById(VOCAB_SPREADSHEET_ID);
+      var sheetVocab = ssVocab.getSheets()[0];
+      
+      // Nếu sheet trống, ghi hàng tiêu đề
+      if (sheetVocab.getLastRow() === 0) {
         sheetVocab.appendRow([
           "Thời gian (Timestamp)", 
           "Chủ đề (Topic)", 
           "Từ vựng (Term)", 
-          "Phiên âm (IPA)", 
           "Từ loại (POS)", 
-          "Định nghĩa (Definition)", 
-          "Ví dụ Anh (Example EN)", 
-          "Ví dụ Việt (Example VI)",
-          "Định dạng JSON (JSON Format)"
+          "Định nghĩa tiếng Việt (Definition)", 
+          "Ví dụ (Example)",
+          "Link Hình ảnh (Image URL)"
         ]);
-        sheetVocab.getRange(1, 1, 1, 9).setFontWeight("bold").setBackground("#059669").setFontColor("#ffffff");
+        sheetVocab.getRange(1, 1, 1, 7).setFontWeight("bold").setBackground("#059669").setFontColor("#ffffff");
       }
       
-      // Tạo định dạng JSON chuẩn cho từ vựng
-      var wordJsonObject = {
-        id: "contrib_" + Date.now(),
-        term: data.term || "",
-        ipa: data.ipa || "",
-        part_of_speech: data.pos || "",
-        definition: data.definition || "",
-        example_en: data.example_en || "",
-        example_vi: data.example_vi || ""
-      };
-      
-      sheetVocab.appendRow([
-        new Date().toLocaleString("vi-VN"),
-        data.topic || "Từ vựng chung",
-        data.term || "",
-        data.ipa || "",
-        data.pos || "",
-        data.definition || "",
-        data.example_en || "",
-        data.example_vi || "",
-        JSON.stringify(wordJsonObject, null, 2)
-      ]);
+      var topicName = data.topic || "Chủ đề chung";
+      var wordsList = Array.isArray(data.words) ? data.words : [data];
+      var rowsToAdd = [];
+      var nowStr = new Date().toLocaleString("vi-VN");
+
+      for (var i = 0; i < wordsList.length; i++) {
+        var w = wordsList[i];
+        if (!w.term && !w.definition) continue; // Bỏ qua dòng trống
+        
+        rowsToAdd.push([
+          nowStr,
+          topicName,
+          w.term || "",
+          w.pos || "",
+          w.definition || "",
+          w.example || "",
+          w.image || ""
+        ]);
+      }
+
+      if (rowsToAdd.length > 0) {
+        sheetVocab.getRange(sheetVocab.getLastRow() + 1, 1, rowsToAdd.length, 7).setValues(rowsToAdd);
+      }
       
       return ContentService.createTextOutput(JSON.stringify({
         status: "success",
-        message: "Cảm ơn bạn đã đóng góp từ vựng mới cho kho TOEIC!"
+        message: "Đã lưu thành công " + rowsToAdd.length + " từ vựng mới vào Google Sheet!"
       })).setMimeType(ContentService.MimeType.JSON);
     }
     
@@ -121,6 +117,6 @@ function doPost(e) {
 function doGet(e) {
   return ContentService.createTextOutput(JSON.stringify({
     status: "online",
-    service: "TOEIC Vocab Master Feedback API"
+    service: "TOEIC Vocab Master Multi-Sheet API"
   })).setMimeType(ContentService.MimeType.JSON);
 }

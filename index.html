@@ -626,58 +626,73 @@
           </div>
         </form>
 
-        <!-- Tab Content 2: Vocab Contribution -->
+        <!-- Tab Content 2: Vocab Contribution Batch Submission -->
         <form class="tab-content hidden" id="form-vocab">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="vocab-topic">Chủ đề TOEIC <span class="required">*</span></label>
-              <input type="text" id="vocab-topic" placeholder="Ví dụ: Business Contracts, Office Life..." required />
-            </div>
-            <div class="form-group">
-              <label for="vocab-term">Từ vựng (Term) <span class="required">*</span></label>
-              <input type="text" id="vocab-term" placeholder="Ví dụ: negotiate" required />
-            </div>
-          </div>
-
-          <div class="form-row">
-            <div class="form-group">
-              <label for="vocab-ipa">Phiên âm (IPA)</label>
-              <input type="text" id="vocab-ipa" placeholder="Ví dụ: /nɪˈɡəʊ.ʃi.eɪt/" />
-            </div>
-            <div class="form-group">
-              <label for="vocab-pos">Từ loại (Part of Speech)</label>
-              <select id="vocab-pos">
-                <option value="verb">Động từ (v.)</option>
-                <option value="noun">Danh từ (n.)</option>
-                <option value="adjective">Tính từ (adj.)</option>
-                <option value="adverb">Trạng từ (adv.)</option>
-                <option value="phrase">Cụm từ (phrase)</option>
-              </select>
-            </div>
-          </div>
-
           <div class="form-group">
-            <label for="vocab-def">Định nghĩa tiếng Việt <span class="required">*</span></label>
-            <input type="text" id="vocab-def" placeholder="Ví dụ: đàm phán, thương lượng" required />
+            <label for="vocab-topic">Chủ đề TOEIC <span class="required">*</span></label>
+            <input type="text" id="vocab-topic" placeholder="Ví dụ: Business Contracts, Office Life, Personnel..." required />
           </div>
 
-          <div class="form-row">
-            <div class="form-group">
-              <label for="vocab-ex-en">Ví dụ tiếng Anh</label>
-              <textarea id="vocab-ex-en" rows="2" placeholder="Ví dụ: The two companies managed to negotiate a fair deal."></textarea>
-            </div>
-            <div class="form-group">
-              <label for="vocab-ex-vi">Dịch ví dụ tiếng Việt</label>
-              <textarea id="vocab-ex-vi" rows="2" placeholder="Ví dụ: Hai công ty đã đàm phán thành công một thỏa thuận công bằng."></textarea>
+          <div class="vocab-batch-header">
+            <label>Danh sách từ vựng đóng góp <span class="required">*</span></label>
+            <span class="vocab-batch-count" id="vocab-batch-count">1 từ</span>
+          </div>
+
+          <!-- Dynamic Words Container -->
+          <div class="vocab-words-list" id="vocab-words-list">
+            <!-- Word Card Item 1 -->
+            <div class="word-card-item" data-index="0">
+              <div class="word-card-header">
+                <span class="word-card-title"><i class="fa-solid fa-font"></i> Từ vựng #1</span>
+                <button type="button" class="btn-remove-word hidden" title="Xóa từ này">&times;</button>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Từ vựng (Term) <span class="required">*</span></label>
+                  <input type="text" class="input-vocab-term" placeholder="Ví dụ: negotiate" required />
+                </div>
+                <div class="form-group">
+                  <label>Từ loại</label>
+                  <select class="input-vocab-pos">
+                    <option value="v.">Động từ (v.)</option>
+                    <option value="n.">Danh từ (n.)</option>
+                    <option value="adj.">Tính từ (adj.)</option>
+                    <option value="adv.">Trạng từ (adv.)</option>
+                    <option value="phrase">Cụm từ (phrase)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label>Định nghĩa tiếng Việt <span class="required">*</span></label>
+                <input type="text" class="input-vocab-def" placeholder="Ví dụ: đàm phán, thương lượng" required />
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label>Ví dụ minh họa</label>
+                  <input type="text" class="input-vocab-ex" placeholder="Ví dụ: They negotiated a new contract." />
+                </div>
+                <div class="form-group">
+                  <label>Link Hình ảnh (Image URL)</label>
+                  <input type="url" class="input-vocab-img" placeholder="https://example.com/image.jpg" />
+                </div>
+              </div>
             </div>
           </div>
+
+          <!-- Add More Word Button -->
+          <button type="button" class="btn-add-word-row" id="btn-add-word-row">
+            <i class="fa-solid fa-plus-circle"></i> Thêm từ vựng nữa
+          </button>
 
           <div class="form-status" id="vocab-status-msg"></div>
 
           <div class="modal-footer">
             <button type="button" class="btn-secondary" id="btn-cancel-vocab">Hủy</button>
             <button type="submit" class="btn-primary" id="btn-submit-vocab">
-              <i class="fa-solid fa-plus-circle"></i> Đóng Góp Từ Vựng
+              <i class="fa-solid fa-paper-plane"></i> Gửi Tất Cả Từ Vựng
             </button>
           </div>
         </form>
