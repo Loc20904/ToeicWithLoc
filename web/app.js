@@ -277,6 +277,7 @@ const DOM = {
 
   // Feedback & Vocab Contribution Modal
   btnOpenFeedback: document.getElementById('btn-open-feedback'),
+  btnOpenFeedbackHeader: document.getElementById('btn-open-feedback-header'),
   modalFeedback: document.getElementById('modal-feedback'),
   btnCloseFeedback: document.getElementById('btn-close-feedback'),
   btnCancelFeedback: document.getElementById('btn-cancel-feedback'),
@@ -286,11 +287,6 @@ const DOM = {
   formFeedback: document.getElementById('form-feedback'),
   formVocab: document.getElementById('form-vocab'),
   starRating: document.getElementById('fb-star-rating'),
-  btnToggleApiConfig: document.getElementById('btn-toggle-api-config'),
-  apiConfigBody: document.getElementById('api-config-body'),
-  inputApiUrl: document.getElementById('input-api-url'),
-  btnSaveApiUrl: document.getElementById('btn-save-api-url'),
-  importJsonText: document.getElementById('import-json-text'),
 
   // Progress Backup & Sync Elements
   btnExportProgress: document.getElementById('btn-export-progress'),
@@ -1804,13 +1800,13 @@ function setupEventListeners() {
   });
 
   // Feedback & Vocab Contribution Modal Controls
-  let appsScriptUrl = localStorage.getItem('toeic_apps_script_url') || '';
+  const openFeedbackModal = () => DOM.modalFeedback.classList.remove('hidden');
 
   if (DOM.btnOpenFeedback) {
-    DOM.btnOpenFeedback.addEventListener('click', () => {
-      DOM.modalFeedback.classList.remove('hidden');
-      if (DOM.inputApiUrl) DOM.inputApiUrl.value = appsScriptUrl;
-    });
+    DOM.btnOpenFeedback.addEventListener('click', openFeedbackModal);
+  }
+  if (DOM.btnOpenFeedbackHeader) {
+    DOM.btnOpenFeedbackHeader.addEventListener('click', openFeedbackModal);
   }
   if (DOM.btnCloseFeedback) {
     DOM.btnCloseFeedback.addEventListener('click', () => DOM.modalFeedback.classList.add('hidden'));
@@ -1859,23 +1855,9 @@ function setupEventListeners() {
     });
   }
 
-  // API Config Toggle & Save
-  if (DOM.btnToggleApiConfig) {
-    DOM.btnToggleApiConfig.addEventListener('click', () => {
-      DOM.apiConfigBody.classList.toggle('hidden');
-    });
-  }
-  if (DOM.btnSaveApiUrl) {
-    DOM.btnSaveApiUrl.addEventListener('click', () => {
-      appsScriptUrl = DOM.inputApiUrl.value.trim();
-      localStorage.setItem('toeic_apps_script_url', appsScriptUrl);
-      alert('✅ Đã lưu Cấu hình Google Sheets Web App API URL!');
-    });
-  }
-
   // Helper function to send payload to Google Sheets Apps Script API
   async function sendToGoogleSheets(payload, statusEl, submitBtn, formEl) {
-    const targetUrl = HARDCODED_APPS_SCRIPT_URL || localStorage.getItem('toeic_apps_script_url') || appsScriptUrl;
+    const targetUrl = HARDCODED_APPS_SCRIPT_URL;
     
     statusEl.className = 'form-status loading';
     statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tự động lưu dữ liệu vào Google Sheets...';

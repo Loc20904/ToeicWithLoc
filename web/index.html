@@ -87,8 +87,8 @@
           </div>
         </div>
 
-        <button class="btn-import-data" id="btn-open-feedback" style="background: linear-gradient(135deg, #4f46e5 0%, #059669 100%); border: none;">
-          <i class="fa-solid fa-lightbulb"></i> Đóng Góp & Góp Ý
+        <button class="btn-sidebar-feedback" id="btn-open-feedback">
+          <i class="fa-solid fa-comments"></i> <span>Đóng Góp & Góp Ý</span>
         </button>
       </div>
     </aside>
@@ -108,6 +108,10 @@
         </div>
 
         <div class="header-right">
+          <button class="btn-header-feedback" id="btn-open-feedback-header" title="Đóng góp ý kiến & Từ vựng mới">
+            <i class="fa-solid fa-comments"></i> <span>Đóng Góp & Góp Ý</span>
+          </button>
+
           <div class="search-box">
             <i class="fa-solid fa-magnifying-glass"></i>
             <input type="text" id="global-search" placeholder="Tìm kiếm từ vựng, nghĩa tiếng Việt..." />
@@ -696,20 +700,6 @@
             </button>
           </div>
         </form>
-
-        <!-- Google Apps Script Settings Toggle -->
-        <div class="api-config-section">
-          <button type="button" class="btn-link-config" id="btn-toggle-api-config">
-            <i class="fa-solid fa-gear"></i> Cấu hình Google Sheets Web App API URL
-          </button>
-          <div class="api-config-body hidden" id="api-config-body">
-            <p class="config-desc">Nhập Web App URL từ Google Apps Script của bạn để lưu dữ liệu đóng góp vào Google Sheet cá nhân:</p>
-            <div class="api-input-group">
-              <input type="url" id="input-api-url" placeholder="https://script.google.com/macros/s/.../exec" />
-              <button type="button" class="btn-secondary btn-sm" id="btn-save-api-url">Lưu URL</button>
-            </div>
-          </div>
-        </div>
 
       </div>
     </div>
