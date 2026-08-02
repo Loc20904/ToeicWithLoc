@@ -10,7 +10,7 @@
  */
 
 // Hardcoded Google Sheets Web App API URL (triển khai cứng trực tiếp vào ứng dụng)
-const HARDCODED_APPS_SCRIPT_URL = "";
+const HARDCODED_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxnAtj4u7M184CA9by1ABmYqG5_4mPr3YsVbWYQdAXLpZb6u56P0JO6KIE3dku3vKQq7g/exec";
 
 // Application State
 const state = {
