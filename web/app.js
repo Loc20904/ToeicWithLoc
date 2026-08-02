@@ -9,6 +9,9 @@
  * - 0.6s smooth transition, Web Audio API SFX
  */
 
+// Hardcoded Google Sheets Web App API URL (triển khai cứng trực tiếp vào ứng dụng)
+const HARDCODED_APPS_SCRIPT_URL = "";
+
 // Application State
 const state = {
   topics: [],
@@ -1872,7 +1875,7 @@ function setupEventListeners() {
 
   // Helper function to send payload to Google Sheets Apps Script API
   async function sendToGoogleSheets(payload, statusEl, submitBtn, formEl) {
-    const targetUrl = appsScriptUrl || localStorage.getItem('toeic_apps_script_url');
+    const targetUrl = HARDCODED_APPS_SCRIPT_URL || localStorage.getItem('toeic_apps_script_url') || appsScriptUrl;
     
     statusEl.className = 'form-status loading';
     statusEl.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Đang tự động lưu dữ liệu vào Google Sheets...';
