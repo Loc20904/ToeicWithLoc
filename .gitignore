@@ -1,0 +1,14 @@
+# Python & Cache
+__pycache__/
+*.pyc
+
+# Environment & Credentials
+.env
+
+# Heavy PDF files
+*.pdf
+copper-pattern-*.json
+
+# System files
+.DS_Store
+Thumbs.db

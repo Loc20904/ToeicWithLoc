@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TOEIC Vocab Master - Local Study App (Quizlet Alternative)</title>
+  
+  <!-- Font Google Inter & Outfits -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo">
+          <i class="fa-solid fa-graduation-cap logo-icon"></i>
+          <span class="logo-text">TOEIC <span>Vocab</span></span>
+        </div>
+        <span class="badge-local">Local Mode</span>
+      </div>
+
+      <nav class="sidebar-menu">
+        <button class="menu-item active" data-view="dashboard">
+          <i class="fa-solid fa-shapes"></i>
+          <span>Học phần (Topics)</span>
+        </button>
+        <button class="menu-item" data-view="starred" id="nav-starred">
+          <i class="fa-solid fa-star" style="color: var(--accent-warning);"></i>
+          <span>Thẻ đã đánh dấu (<strong id="sidebar-starred-count">0</strong>)</span>
+        </button>
+        <button class="menu-item" data-view="random" id="nav-random">
+          <i class="fa-solid fa-dice" style="color: var(--accent-secondary);"></i>
+          <span>Ôn ngẫu nhiên (Random)</span>
+        </button>
+        <button class="menu-item" data-view="flashcards" id="nav-flashcards">
+          <i class="fa-solid fa-clone"></i>
+          <span>Flashcard (Thẻ nhớ)</span>
+        </button>
+        <button class="menu-item" data-view="learn" id="nav-learn">
+          <i class="fa-solid fa-graduation-cap"></i>
+          <span>Chế độ Học (Learn)</span>
+        </button>
+        <button class="menu-item" data-view="quiz" id="nav-quiz">
+          <i class="fa-solid fa-list-check"></i>
+          <span>Ôn tập Trắc nghiệm</span>
+        </button>
+        <button class="menu-item" data-view="match" id="nav-match">
+          <i class="fa-solid fa-puzzle-piece"></i>
+          <span>Game Ghép thẻ</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="voice-settings-mini">
+          <i class="fa-solid fa-volume-high"></i>
+          <div class="voice-info">
+            <span id="current-voice-label">Giọng đọc: English</span>
+            <select id="voice-speed-select" title="Tốc độ đọc">
+              <option value="0.8">Chậm 0.8x</option>
+              <option value="1.0" selected>Chuẩn 1.0x</option>
+              <option value="1.2">Nhanh 1.2x</option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="progress-backup-actions">
+          <div class="sync-status-badge" id="sync-status-badge" title="Trạng thái tự động lưu vào ổ đĩa">
+            <i class="fa-solid fa-cloud-arrow-up"></i> <span id="sync-status-text">Đã đồng bộ ổ đĩa</span>
+          </div>
+          <div class="backup-btn-group">
+            <button class="btn-backup-action" id="btn-export-progress" title="Tải file sao lưu tiến độ (.json) về máy">
+              <i class="fa-solid fa-download"></i> Xuất Tiến Độ
+            </button>
+            <button class="btn-backup-action" id="btn-import-progress" title="Nạp file sao lưu (.json) từ máy tính">
+              <i class="fa-solid fa-upload"></i> Khôi Phục
+            </button>
+            <input type="file" id="file-input-progress" accept=".json" style="display: none;" />
+          </div>
+        </div>
+
+        <button class="btn-import-data" id="btn-open-import">
+          <i class="fa-solid fa-file-import"></i> Nạp Dữ Liệu JSON
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Navigation Header -->
+      <header class="top-header">
+        <div class="header-left">
+          <button class="btn-toggle-sidebar" id="btn-toggle-sidebar" title="Mở/Đóng Sidebar">
+            <i class="fa-solid fa-bars"></i>
+          </button>
+          <div class="current-topic-badge" id="current-topic-badge">
+            <i class="fa-solid fa-folder-open"></i>
+            <span id="header-topic-title">Chưa chọn Học phần</span>
+          </div>
+        </div>
+
+        <div class="header-right">
+          <div class="search-box">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input type="text" id="global-search" placeholder="Tìm kiếm từ vựng, nghĩa tiếng Việt..." />
+          </div>
+          
+          <button class="theme-toggle" id="theme-toggle" title="Chuyển chế độ Sáng/Tối">
+            <i class="fa-solid fa-moon"></i>
+          </button>
+        </div>
+      </header>
+
+      <!-- View Containers -->
+      
+      <!-- 1. DASHBOARD VIEW (Topic List) -->
+      <section class="view-section active" id="view-dashboard">
+        <div class="hero-banner">
+          <div class="hero-text">
+            <h1>Ôn Tập Từ Vựng TOEIC 990</h1>
+            <p>Hệ thống ghi nhớ từ vựng chuẩn TOEIC không giới hạn lượt học. Chọn một Học phần bên dưới để bắt đầu ôn tập!</p>
+          </div>
+          <div class="hero-stats">
+            <div class="stat-card">
+              <span class="stat-number" id="stat-total-topics">0</span>
+              <span class="stat-label">Học phần</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-number" id="stat-total-words">0</span>
+              <span class="stat-label">Từ vựng</span>
+            </div>
+            <div class="stat-card highlight">
+              <span class="stat-number" id="stat-learned-words">0</span>
+              <span class="stat-label">Đã thuộc</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-title">
+          <h2><i class="fa-solid fa-layer-group"></i> Danh Sách Các Học Phần TOEIC</h2>
+        </div>
+
+        <div class="topics-grid" id="topics-grid">
+          <!-- Topic cards populated dynamically -->
+        </div>
+      </section>
+
+      <!-- 2. FLASHCARDS VIEW -->
+      <section class="view-section" id="view-flashcards">
+        <div class="view-toolbar">
+          <button class="btn-back" id="btn-back-to-dashboard">
+            <i class="fa-solid fa-arrow-left"></i> Quay lại
+          </button>
+
+          <div class="study-filter-group" id="fc-filter-group">
+            <button class="btn-filter-mode active" data-mode="all" id="btn-fc-filter-all">
+              <i class="fa-solid fa-layer-group"></i> Tất cả (<span class="count-all">0</span>)
+            </button>
+            <button class="btn-filter-mode" data-mode="starred" id="btn-fc-filter-starred">
+              <i class="fa-solid fa-star" style="color:var(--accent-warning)"></i> Đã đánh dấu (<span class="count-starred">0</span>)
+            </button>
+          </div>
+          
+          <div class="flashcard-progress">
+            <span id="fc-counter">1 / 10</span>
+            <div class="progress-bar-bg">
+              <div class="progress-bar-fill" id="fc-progress-fill"></div>
+            </div>
+          </div>
+
+          <div class="toolbar-actions">
+            <button class="btn-tool" id="btn-toggle-star" title="Đánh dấu từ quan trọng">
+              <i class="fa-regular fa-star"></i>
+            </button>
+            <button class="btn-tool" id="btn-shuffle" title="Trộn ngẫu nhiên">
+              <i class="fa-solid fa-shuffle"></i>
+            </button>
+            <button class="btn-tool" id="btn-autoplay" title="Tự động chạy (Auto-play)">
+              <i class="fa-solid fa-play"></i> Autoplay
+            </button>
+          </div>
+        </div>
+
+        <!-- Flashcard Flip Area -->
+        <div class="flashcard-wrapper">
+          <div class="flashcard-container" id="flashcard">
+            <!-- Front of Card -->
+            <div class="card-face card-front">
+              <div class="card-header">
+                <span class="card-tag">Học phần: <strong id="fc-topic-name">General Business</strong></span>
+                <button class="btn-audio" id="btn-audio-front" title="Nghe âm chuẩn (US/UK)">
+                  <i class="fa-solid fa-volume-high"></i>
+                </button>
+              </div>
+
+              <div class="card-body-front">
+                <h1 class="term-title" id="fc-term">acceptance</h1>
+                <div class="term-ipa" id="fc-ipa-front">/əkˈseptəns/</div>
+                <div class="flip-hint">
+                  <i class="fa-solid fa-rotate"></i> Nhấn Space hoặc click để lật mặt sau
+                </div>
+              </div>
+            </div>
+
+            <!-- Back of Card -->
+            <div class="card-face card-back">
+              <div class="card-header">
+                <span class="card-tag">Định nghĩa & Ví dụ</span>
+                <button class="btn-audio" id="btn-audio-back" title="Nghe lại phát âm">
+                  <i class="fa-solid fa-volume-high"></i>
+                </button>
+              </div>
+
+              <div class="card-body-back">
+                <!-- Left Column: Formatted Text Definition -->
+                <div class="back-col-left">
+                  <div class="def-pos" id="fc-pos">(N)</div>
+                  <div class="def-synonym" id="fc-synonym">= recognition</div>
+                  <div class="def-main" id="fc-definition">sự chấp nhận</div>
+                  <div class="def-note" id="fc-note">(hóa đơn, chứng từ giao có đảm bảo thanh toán)</div>
+                  
+                  <div class="def-ipa-bottom" id="fc-ipa-back">/əkˈseptəns/</div>
+
+                  <div class="def-example" id="fc-example-box">
+                    <p class="en" id="fc-example-en">We are pleased to announce the acceptance of your business proposal.</p>
+                    <p class="vi" id="fc-example-vi">Chúng tôi hân hạnh thông báo sự chấp nhận đề xuất kinh doanh của bạn.</p>
+                  </div>
+                </div>
+
+                <!-- Right Column: Visual Image -->
+                <div class="back-col-right">
+                  <div class="card-image-box">
+                    <img src="" id="fc-image" alt="Visual Illustration" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Controls below Card -->
+        <div class="flashcard-controls">
+          <button class="btn-control btn-prev" id="btn-fc-prev" title="Từ trước đó (Mũi tên Trái)">
+            <i class="fa-solid fa-chevron-left"></i> Từ trước
+          </button>
+          
+          <button class="btn-control btn-reset-fc" id="btn-reset-flashcards" title="Đặt lại về thẻ đầu tiên (Phím R)">
+            <i class="fa-solid fa-rotate-left"></i> Đặt lại
+          </button>
+          
+          <button class="btn-control btn-next" id="btn-fc-next" title="Từ tiếp theo (Mũi tên Phải)">
+            Từ tiếp <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+
+        <div class="keyboard-shortcuts-hint">
+          <span><kbd>Space</kbd> Lật thẻ</span>
+          <span><kbd>←</kbd> Từ trước</span>
+          <span><kbd>→</kbd> Từ tiếp</span>
+          <span><kbd>R</kbd> Đặt lại</span>
+        </div>
+      </section>
+
+      <!-- 3. CHẾ ĐỘ HỌC (QUIZLET LEARN MODE - Sequential Choice & Typing) -->
+      <section class="view-section" id="view-learn">
+        <div class="quizlet-learn-wrapper">
+          <!-- Top Quizlet Progress Header -->
+          <div class="learn-header-bar">
+            <button class="btn-back" data-target="dashboard">
+              <i class="fa-solid fa-arrow-left"></i> Quay lại
+            </button>
+
+            <div class="study-filter-group" id="learn-filter-group">
+              <button class="btn-filter-mode active" data-mode="all" id="btn-learn-filter-all">
+                <i class="fa-solid fa-layer-group"></i> Tất cả (<span class="count-all">0</span>)
+              </button>
+              <button class="btn-filter-mode" data-mode="starred" id="btn-learn-filter-starred">
+                <i class="fa-solid fa-star" style="color:var(--accent-warning)"></i> Đã đánh dấu (<span class="count-starred">0</span>)
+              </button>
+            </div>
+
+            <div class="learn-progress-segments">
+              <span class="segment-badge start-badge" id="learn-score-mastered">0</span>
+              <div class="segments-track" id="learn-segments-track">
+                <div class="segment-fill" id="learn-progress-fill"></div>
+              </div>
+              <span class="segment-badge end-badge" id="learn-total-words-badge">10</span>
+            </div>
+
+            <div class="header-learn-actions">
+              <div class="learn-stage-indicator" id="learn-stage-badge">
+                <span class="stage-dot"></span> Stage 1: Chọn 1-4
+              </div>
+              <button class="btn-reset-learn" id="btn-reset-learn" title="Đặt lại tiến độ & Học lại từ đầu">
+                <i class="fa-solid fa-rotate-left"></i> Đặt lại
+              </button>
+            </div>
+          </div>
+
+          <!-- Main Quizlet Card Container -->
+          <div class="quizlet-card" id="learn-card">
+            <div class="quizlet-card-top">
+              <span class="definition-label">Định nghĩa</span>
+              <button class="btn-audio-circle-mini" id="btn-learn-audio" title="Nghe phát âm">
+                <i class="fa-solid fa-volume-high"></i>
+              </button>
+            </div>
+
+            <!-- Definition Body (Text Left + Image Right) -->
+            <div class="quizlet-card-body">
+              <div class="quizlet-def-left">
+                <div class="quizlet-pos" id="learn-pos">(N)</div>
+                <h2 class="quizlet-def-title" id="learn-definition">sự chấp nhận</h2>
+                <div class="quizlet-synonym" id="learn-synonym"></div>
+                <p class="quizlet-def-note" id="learn-note">(hóa đơn, chứng từ giao có đảm bảo thanh toán)</p>
+              </div>
+
+              <div class="quizlet-img-right">
+                <img id="learn-image" src="" alt="Quizlet Illustration" />
+              </div>
+            </div>
+
+            <!-- Stage 1: Multiple Choice Options (Grid 2x2 with numbers 1-4) -->
+            <div class="quizlet-stage-options" id="learn-stage-choice">
+              <div class="stage-subheading">Chọn đáp án đúng</div>
+              <div class="options-grid-2x2" id="learn-choice-grid">
+                <!-- Options populated dynamically -->
+              </div>
+
+              <div class="stage-bottom-bar">
+                <button class="btn-flag" id="btn-flag-choice" title="Đánh dấu từ này"><i class="fa-regular fa-star"></i></button>
+                <button class="btn-dont-know" id="btn-dont-know-choice">Bạn không biết?</button>
+              </div>
+            </div>
+
+            <!-- Stage 2: Typing Recall Input (Nhập Tiếng Anh) -->
+            <div class="quizlet-stage-typing hidden" id="learn-stage-typing">
+              <div class="stage-subheading">Đáp án của bạn</div>
+              
+              <form class="learn-typing-form" id="learn-typing-form">
+                <input type="text" id="learn-typing-input" placeholder="Nhập Tiếng Anh" autocomplete="off" />
+              </form>
+
+              <div class="stage-bottom-bar space-between">
+                <button class="btn-hint" id="btn-show-hint"><i class="fa-regular fa-lightbulb"></i> Hiển thị gợi ý</button>
+
+                <div class="bottom-right-actions">
+                  <button class="btn-flag" id="btn-flag-typing" title="Đánh dấu từ này"><i class="fa-regular fa-star"></i></button>
+                  <button class="btn-dont-know" id="btn-dont-know-typing">Bạn không biết?</button>
+                  <button class="btn-submit-answer" id="btn-submit-learn-typing">Trả lời (Enter ↵)</button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Result Feedback Overlay (When wrong or Don't know clicked) -->
+            <div class="quizlet-feedback-overlay hidden" id="learn-feedback-overlay">
+              <div class="feedback-card-inner">
+                <div class="feedback-header" id="learn-feedback-status">Chưa chính xác!</div>
+                
+                <div class="feedback-answers">
+                  <div class="answer-row correct-row">
+                    <span class="row-label">Đáp án đúng:</span>
+                    <span class="row-val" id="feedback-correct-val">acceptance</span>
+                    <button class="btn-audio-mini" id="btn-feedback-audio"><i class="fa-solid fa-volume-high"></i></button>
+                  </div>
+                  <div class="answer-row user-row hidden" id="feedback-user-row">
+                    <span class="row-label">Đáp án của bạn:</span>
+                    <span class="row-val user-val" id="feedback-user-val">accept</span>
+                  </div>
+                </div>
+
+                <button class="btn-continue-learn" id="btn-continue-learn">
+                  Đã hiểu, tiếp tục <i class="fa-solid fa-arrow-right"></i> <span style="font-size:0.85rem; opacity:0.8; margin-left:6px;">(Ấn Enter ↵)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. QUIZ VIEW (Trắc Nghiệm Nhanh) -->
+      <section class="view-section" id="view-quiz">
+        <div class="view-toolbar">
+          <button class="btn-back" data-target="dashboard">
+            <i class="fa-solid fa-arrow-left"></i> Quay lại
+          </button>
+          <h2><i class="fa-solid fa-list-check"></i> Ôn Tập Trắc Nghiệm Nhanh</h2>
+          <div class="study-filter-group" id="quiz-filter-group">
+            <button class="btn-filter-mode active" data-mode="all" id="btn-quiz-filter-all">
+              <i class="fa-solid fa-layer-group"></i> Tất cả (<span class="count-all">0</span>)
+            </button>
+            <button class="btn-filter-mode" data-mode="starred" id="btn-quiz-filter-starred">
+              <i class="fa-solid fa-star" style="color:var(--accent-warning)"></i> Đã đánh dấu (<span class="count-starred">0</span>)
+            </button>
+          </div>
+          <div class="quiz-score-badge">Đúng: <span id="quiz-score">0</span></div>
+        </div>
+
+        <div class="quiz-container">
+          <div class="quiz-card">
+            <div class="quiz-header">
+              <span class="quiz-step" id="quiz-step">Câu 1 / 10</span>
+              <button class="btn-audio" id="btn-quiz-audio"><i class="fa-solid fa-volume-high"></i></button>
+            </div>
+
+            <div class="quiz-prompt">
+              <h2 id="quiz-question-term">acceptance</h2>
+              <div class="quiz-ipa" id="quiz-question-ipa">/əkˈseptəns/</div>
+            </div>
+
+            <div class="quiz-options" id="quiz-options">
+              <!-- Options populated dynamically -->
+            </div>
+
+            <div class="quiz-feedback hidden" id="quiz-feedback">
+              <div class="feedback-msg" id="feedback-msg">Chính xác!</div>
+              <button class="btn-next-quiz" id="btn-next-quiz">Câu tiếp theo <i class="fa-solid fa-arrow-right"></i></button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 5. MATCH GAME VIEW (Game Ghép Thẻ) -->
+      <section class="view-section" id="view-match">
+        <div class="view-toolbar">
+          <button class="btn-back" data-target="dashboard">
+            <i class="fa-solid fa-arrow-left"></i> Quay lại
+          </button>
+          <h2><i class="fa-solid fa-puzzle-piece"></i> Game Ghép Thẻ Tính Giờ</h2>
+          <div class="study-filter-group" id="match-filter-group">
+            <button class="btn-filter-mode active" data-mode="all" id="btn-match-filter-all">
+              <i class="fa-solid fa-layer-group"></i> Tất cả (<span class="count-all">0</span>)
+            </button>
+            <button class="btn-filter-mode" data-mode="starred" id="btn-match-filter-starred">
+              <i class="fa-solid fa-star" style="color:var(--accent-warning)"></i> Đã đánh dấu (<span class="count-starred">0</span>)
+            </button>
+          </div>
+          <div class="timer-badge"><i class="fa-solid fa-stopwatch"></i> <span id="match-timer">0.0s</span></div>
+        </div>
+
+        <div class="match-grid" id="match-grid">
+          <!-- Match cards created dynamically -->
+        </div>
+
+        <div class="match-victory-overlay hidden" id="match-victory">
+          <div class="victory-card">
+            <i class="fa-solid fa-trophy trophy-icon"></i>
+            <h2>Xuất sắc! Bạn đã hoàn thành!</h2>
+            <p>Thời gian làm bài: <strong id="final-match-time">0.0s</strong></p>
+            <button class="btn-restart-match" id="btn-restart-match">Chơi lại</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 6. STARRED WORDS VIEW (Danh sách từ vựng đã đánh dấu) -->
+      <section class="view-section" id="view-starred">
+        <div class="starred-header-banner">
+          <div class="starred-header-info">
+            <h2><i class="fa-solid fa-star" style="color: var(--accent-warning);"></i> Thẻ Từ Vựng Đã Đánh Dấu</h2>
+            <p>Tập trung ôn luyện các thuật ngữ quan trọng bạn đã gắn sao ⭐</p>
+          </div>
+          <div class="starred-quick-actions">
+            <button class="btn-starred-act" id="btn-starred-study-fc">
+              <i class="fa-solid fa-clone"></i> Flashcard (<span id="starred-count-fc">0</span>)
+            </button>
+            <button class="btn-starred-act primary" id="btn-starred-study-learn">
+              <i class="fa-solid fa-graduation-cap"></i> Chế độ Học (<span id="starred-count-learn">0</span>)
+            </button>
+            <button class="btn-starred-act" id="btn-starred-study-quiz">
+              <i class="fa-solid fa-list-check"></i> Trắc nghiệm (<span id="starred-count-quiz">0</span>)
+            </button>
+            <button class="btn-starred-act" id="btn-starred-study-match">
+              <i class="fa-solid fa-puzzle-piece"></i> Ghép thẻ (<span id="starred-count-match">0</span>)
+            </button>
+          </div>
+        </div>
+
+        <div class="starred-cards-grid" id="starred-cards-grid">
+          <!-- Starred cards or empty state dynamically rendered -->
+        </div>
+      </section>
+
+      <!-- 7. RANDOM PRACTICE VIEW (Ôn Ngẫu Nhiên Kho Từ Vựng) -->
+      <section class="view-section" id="view-random">
+        <div class="random-header-banner">
+          <div class="random-header-info">
+            <h2><i class="fa-solid fa-dice" style="color: var(--accent-secondary);"></i> Ôn Tập Ngẫu Nhiên Kho Từ Vựng</h2>
+            <p>Tự động trộn ngẫu nhiên từ vựng từ tất cả các chủ đề để luyện phản xạ và kiểm tra khả năng ghi nhớ tổng hợp.</p>
+          </div>
+        </div>
+
+        <div class="random-setup-card">
+          <h3><i class="fa-solid fa-sliders"></i> Cấu Hình Ôn Tập Ngẫu Nhiên</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 24px;">Chọn các học phần và số lượng từ vựng bạn muốn trộn ngẫu nhiên để bắt đầu ôn tập:</p>
+          
+          <!-- Topic Selection Checkboxes -->
+          <div class="random-option-group" style="margin-bottom: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+              <label style="font-weight: 600; color: var(--text-main); font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+                <i class="fa-solid fa-layer-group" style="color: var(--accent-primary);"></i> Chọn học phần muốn ôn (Mặc định tất cả):
+              </label>
+              <div class="random-topic-actions">
+                <button class="btn-text-action" id="btn-random-select-all" style="font-size:0.8rem; background:rgba(99,102,241,0.12); border:1px solid rgba(99,102,241,0.3); color:var(--accent-primary); padding:4px 10px; border-radius:6px; cursor:pointer; font-weight:600; margin-right: 8px;">
+                  <i class="fa-solid fa-check-double"></i> Chọn tất cả (<span id="random-topic-total-badge">0</span>)
+                </button>
+                <button class="btn-text-action" id="btn-random-deselect-all" style="font-size:0.8rem; background:rgba(255,255,255,0.05); border:1px solid var(--border-color); color:var(--text-muted); padding:4px 10px; border-radius:6px; cursor:pointer; font-weight:500;">
+                  Bỏ chọn tất cả
+                </button>
+              </div>
+            </div>
+            <div class="random-topics-checkbox-grid" id="random-topics-checkbox-grid">
+              <!-- Dynamically populated topic checkboxes -->
+            </div>
+          </div>
+
+          <!-- Count Selection + Custom Input -->
+          <div class="random-option-group">
+            <label style="font-weight: 600; color: var(--text-main); font-size: 0.95rem; display: flex; align-items: center; gap: 8px;">
+              <i class="fa-solid fa-list-ol" style="color: var(--accent-primary);"></i> Số lượng từ vựng ngẫu nhiên:
+            </label>
+            <div class="btn-group-count" id="random-count-group">
+              <button class="btn-count-opt" data-count="10">10 từ</button>
+              <button class="btn-count-opt active" data-count="20">20 từ</button>
+              <button class="btn-count-opt" data-count="50">50 từ</button>
+              <button class="btn-count-opt" data-count="all">Tất cả (<span id="random-total-count">0</span> từ)</button>
+              <div class="custom-count-wrapper" style="display: flex; align-items: center; gap: 6px;">
+                <button class="btn-count-opt" data-count="custom" id="btn-count-custom-trigger">Tùy chỉnh:</button>
+                <input type="number" id="random-custom-count-input" min="1" max="9999" placeholder="VD: 35" style="width: 100px; padding: 8px 12px; background: var(--bg-main); border: 1px solid var(--border-color); color: var(--text-main); border-radius: var(--radius-md); font-weight: 600; font-size: 0.9rem; outline: none; transition: var(--transition-fast);" />
+              </div>
+            </div>
+          </div>
+
+          <div class="random-actions-grid">
+            <button class="btn-random-act primary" id="btn-random-study-fc">
+              <i class="fa-solid fa-clone"></i> Flashcard (<span class="random-chosen-count">20</span> từ)
+            </button>
+            <button class="btn-random-act success" id="btn-random-study-learn">
+              <i class="fa-solid fa-graduation-cap"></i> Chế độ Học (<span class="random-chosen-count">20</span> từ)
+            </button>
+            <button class="btn-random-act warning" id="btn-random-study-quiz">
+              <i class="fa-solid fa-list-check"></i> Trắc nghiệm (<span class="random-chosen-count">20</span> từ)
+            </button>
+            <button class="btn-random-act danger" id="btn-random-study-match">
+              <i class="fa-solid fa-puzzle-piece"></i> Game Ghép Thẻ (<span class="random-chosen-count">20</span> từ)
+            </button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Modal Import Data -->
+  <div class="modal-backdrop hidden" id="modal-import">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3><i class="fa-solid fa-file-import"></i> Nạp Dữ Liệu Từ Vựng Custom (JSON)</h3>
+        <button class="btn-close-modal" id="btn-close-import">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Dán chuỗi JSON danh sách từ vựng hoặc nạp file JSON xuất từ script Python:</p>
+        <textarea id="import-json-text" placeholder='[{"topic_id": "custom", "topic_name": "Tự chọn", "words": [...]}]'></textarea>
+      </div>
+      <div class="modal-footer" style="display: flex; justify-content: space-between; gap: 10px;">
+        <button class="btn-secondary" id="btn-reset-dataset" style="color: #ff4d4f; border-color: rgba(255,77,79,0.3);"><i class="fa-solid fa-rotate-left"></i> Khôi phục dữ liệu từ server (Xóa JSON tạm)</button>
+        <div style="display: flex; gap: 8px;">
+          <button class="btn-secondary" id="btn-cancel-import">Hủy</button>
+          <button class="btn-primary" id="btn-submit-import">Nạp Dữ Liệu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main JavaScript App -->
+  <script src="app.js"></script>
+</body>
+</html>
