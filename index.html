@@ -25,13 +25,16 @@
           <i class="fa-solid fa-graduation-cap logo-icon"></i>
           <span class="logo-text">TOEIC <span>Vocab</span></span>
         </div>
-        <span class="badge-local">Local Mode</span>
       </div>
 
       <nav class="sidebar-menu">
         <button class="menu-item active" data-view="dashboard">
           <i class="fa-solid fa-shapes"></i>
           <span>Học phần (Topics)</span>
+        </button>
+        <button class="menu-item" data-view="all-vocab" id="nav-all-vocab">
+          <i class="fa-solid fa-book-open" style="color: var(--accent-primary);"></i>
+          <span>Tất cả từ vựng (<strong id="sidebar-all-vocab-count">0</strong>)</span>
         </button>
         <button class="menu-item" data-view="starred" id="nav-starred">
           <i class="fa-solid fa-star" style="color: var(--accent-warning);"></i>
@@ -56,6 +59,10 @@
         <button class="menu-item" data-view="match" id="nav-match">
           <i class="fa-solid fa-puzzle-piece"></i>
           <span>Game Ghép thẻ</span>
+        </button>
+        <button class="menu-item" id="nav-tutorial">
+          <i class="fa-solid fa-circle-question" style="color: var(--accent-secondary);"></i>
+          <span>Hướng dẫn sử dụng</span>
         </button>
       </nav>
 
@@ -88,7 +95,7 @@
         </div>
 
         <button class="btn-sidebar-feedback" id="btn-open-feedback">
-          <i class="fa-solid fa-comments"></i> <span>Đóng Góp & Góp Ý</span>
+          <i class="fa-solid fa-comments"></i> <span>Donate new vocabulary</span>
         </button>
       </div>
     </aside>
@@ -108,13 +115,21 @@
         </div>
 
         <div class="header-right">
-          <button class="btn-header-feedback" id="btn-open-feedback-header" title="Đóng góp ý kiến & Từ vựng mới">
-            <i class="fa-solid fa-comments"></i> <span>Đóng Góp & Góp Ý</span>
+          <button class="btn-header-feedback" id="btn-open-feedback-header" title="Donate new vocabulary">
+            <i class="fa-solid fa-comments"></i> <span>Donate new vocabulary</span>
           </button>
 
-          <div class="search-box">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input type="text" id="global-search" placeholder="Tìm kiếm từ vựng, nghĩa tiếng Việt..." />
+          <button class="btn-header-tutorial" id="btn-open-tutorial-header" title="Xem hướng dẫn sử dụng ứng dụng">
+            <i class="fa-solid fa-circle-question"></i> <span>Hướng dẫn</span>
+          </button>
+
+          <div class="search-box" id="search-box">
+            <i class="fa-solid fa-magnifying-glass search-icon"></i>
+            <input type="text" id="global-search" placeholder="Tìm kiếm từ vựng, nghĩa, IPA... (Phím /)" autocomplete="off" />
+            <button class="btn-clear-search hidden" id="btn-clear-search" title="Xóa từ khóa tìm kiếm">
+              <i class="fa-solid fa-circle-xmark"></i>
+            </button>
+            <kbd class="search-kbd" id="search-kbd">/</kbd>
           </div>
           
           <button class="theme-toggle" id="theme-toggle" title="Chuyển chế độ Sáng/Tối">
@@ -559,6 +574,67 @@
         </div>
       </section>
 
+      <!-- 8. ALL VOCABULARY VIEW (Kho Từ Vựng Tổng Hợp) -->
+      <section class="view-section" id="view-all-vocab">
+        <div class="all-vocab-header-banner">
+          <div class="all-vocab-header-info">
+            <h2><i class="fa-solid fa-book-open" style="color: var(--accent-primary);"></i> Kho Từ Vựng TOEIC Tổng Hợp</h2>
+            <p>Tra cứu, tìm kiếm và quản lý tất cả từ vựng từ các học phần TOEIC với đầy đủ phát âm, định nghĩa và ví dụ.</p>
+          </div>
+          <button class="btn-contribute-primary" id="btn-all-vocab-contribute" title="Đóng góp từ vựng mới vào hệ thống">
+            <i class="fa-solid fa-plus-circle"></i> <span>Góp từ vựng mới</span>
+          </button>
+        </div>
+
+        <div class="all-vocab-toolbar">
+          <div class="all-vocab-filters">
+            <div class="all-vocab-filter-item">
+              <label for="all-vocab-topic-filter"><i class="fa-solid fa-folder"></i> Học phần:</label>
+              <select id="all-vocab-topic-filter">
+                <option value="all">Tất cả học phần</option>
+              </select>
+            </div>
+
+            <div class="all-vocab-filter-item">
+              <label for="all-vocab-status-filter"><i class="fa-solid fa-filter"></i> Trạng thái:</label>
+              <select id="all-vocab-status-filter">
+                <option value="all">Tất cả từ vựng</option>
+                <option value="unlearned">Chưa thuộc</option>
+                <option value="learned">Đã thuộc ✔️</option>
+                <option value="starred">Đã đánh dấu ⭐</option>
+              </select>
+            </div>
+
+            <div class="all-vocab-filter-item">
+              <label for="all-vocab-sort"><i class="fa-solid fa-arrow-down-a-z"></i> Sắp xếp:</label>
+              <select id="all-vocab-sort">
+                <option value="default">Mặc định (Theo ID)</option>
+                <option value="az">Tên từ (A - Z)</option>
+                <option value="za">Tên từ (Z - A)</option>
+                <option value="topic">Theo học phần</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="all-vocab-count-badge">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>Hiển thị <strong id="all-vocab-filtered-count">0</strong> / <span id="all-vocab-total-count">0</span> từ</span>
+          </div>
+        </div>
+
+        <div class="all-vocab-grid" id="all-vocab-grid">
+          <!-- Dynamic vocabulary cards -->
+        </div>
+      </section>
+
+      <!-- App Footer -->
+      <footer class="app-footer">
+        <div class="footer-content">
+          <p>Made with <i class="fa-solid fa-heart" style="color: #ef4444; margin: 0 4px;"></i> by <strong>Loc20904</strong></p>
+          <span class="footer-subtext">TOEIC Vocabulary Master &bull; Smart Study Application</span>
+        </div>
+      </footer>
+
     </main>
   </div>
 
@@ -701,6 +777,114 @@
           </div>
         </form>
 
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Tutorial Onboarding cho người dùng mới -->
+  <div class="modal-backdrop hidden" id="modal-onboarding">
+    <div class="modal-content modal-onboarding-content">
+      <div class="onboarding-header">
+        <div class="onboarding-brand">
+          <i class="fa-solid fa-graduation-cap logo-icon"></i>
+          <span>Chào mừng đến với <strong>TOEIC Vocab Master</strong></span>
+        </div>
+        <button class="btn-close-modal" id="btn-close-onboarding">&times;</button>
+      </div>
+
+      <!-- Step Indicator -->
+      <div class="onboarding-steps-bar">
+        <div class="step-dot active" data-step="1" title="Bước 1: Học phần TOEIC"><span>1</span></div>
+        <div class="step-line"></div>
+        <div class="step-dot" data-step="2" title="Bước 2: Tìm kiếm & Tra cứu"><span>2</span></div>
+        <div class="step-line"></div>
+        <div class="step-dot" data-step="3" title="Bước 3: Flashcard & Phát âm"><span>3</span></div>
+        <div class="step-line"></div>
+        <div class="step-dot" data-step="4" title="Bước 4: Chế độ Học & Trắc nghiệm"><span>4</span></div>
+        <div class="step-line"></div>
+        <div class="step-dot" data-step="5" title="Bước 5: Góp từ & Khôi phục"><span>5</span></div>
+      </div>
+
+      <!-- Body / Slides -->
+      <div class="onboarding-body">
+        <!-- Slide 1 -->
+        <div class="onboarding-slide active" data-step="1">
+          <div class="slide-icon-wrapper" style="background: rgba(99, 102, 241, 0.15); color: var(--accent-primary);">
+            <i class="fa-solid fa-shapes"></i>
+          </div>
+          <h3>📚 Học Phần & Kho Từ Vựng TOEIC 990</h3>
+          <p>Ứng dụng sở hữu bộ dữ liệu <strong>hơn 500+ từ vựng TOEIC chuẩn</strong> được phân loại theo các chủ đề doanh nghiệp thường gặp trong đề thi (General Business, Office, Finance, Contracts...).</p>
+          <div class="slide-tips-box">
+            <div class="tip-item"><i class="fa-solid fa-circle-check"></i> Chọn từng <strong>Học phần</strong> để học tập trung.</div>
+            <div class="tip-item"><i class="fa-solid fa-circle-check"></i> Tiến độ tự động lưu trên máy tính của bạn.</div>
+          </div>
+        </div>
+
+        <!-- Slide 2 -->
+        <div class="onboarding-slide" data-step="2">
+          <div class="slide-icon-wrapper" style="background: rgba(6, 182, 212, 0.15); color: var(--accent-secondary);">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </div>
+          <h3>🔍 Tra Cứu Tất Cả Từ Vựng & Phím Tắt Nhàn</h3>
+          <p>Mục <strong>Tất cả từ vựng</strong> giúp bạn xem toàn bộ kho từ vựng, lọc theo <em>Chưa thuộc</em>, <em>Đã thuộc ✔️</em>, hoặc <em>Đã đánh dấu ⭐</em>.</p>
+          <div class="slide-tips-box">
+            <div class="tip-item"><i class="fa-solid fa-bolt"></i> Nhấn phím <kbd class="search-kbd">/</kbd> ở bất kỳ đâu để gõ từ cần tìm.</div>
+            <div class="tip-item"><i class="fa-solid fa-filter"></i> Lọc và sắp xếp A-Z hoặc theo từng học phần dễ dàng.</div>
+          </div>
+        </div>
+
+        <!-- Slide 3 -->
+        <div class="onboarding-slide" data-step="3">
+          <div class="slide-icon-wrapper" style="background: rgba(245, 158, 11, 0.15); color: var(--accent-warning);">
+            <i class="fa-solid fa-clone"></i>
+          </div>
+          <h3>🃏 Thẻ Nhớ (Flashcard) & Giọng Đọc Chuẩn</h3>
+          <p>Lật thẻ để ghi nhớ từ vựng kèm hình ảnh minh họa, từ loại, phiên âm IPA, từ đồng nghĩa và ví dụ Anh - Việt thực tế.</p>
+          <div class="slide-tips-box">
+            <div class="tip-item"><i class="fa-solid fa-volume-high"></i> Bấm nút Loa hoặc bật <strong>Auto-play</strong> để nghe phát âm chuẩn.</div>
+            <div class="tip-item"><i class="fa-solid fa-star"></i> Nhấn phím <kbd class="search-kbd">Space</kbd> để lật thẻ. Bấm ⭐ để lưu từ khó!</div>
+          </div>
+        </div>
+
+        <!-- Slide 4 -->
+        <div class="onboarding-slide" data-step="4">
+          <div class="slide-icon-wrapper" style="background: rgba(16, 185, 129, 0.15); color: var(--accent-success);">
+            <i class="fa-solid fa-graduation-cap"></i>
+          </div>
+          <h3>🎯 Chế Độ Học Thông Minh (Quizlet Style)</h3>
+          <p>Rèn luyện trí nhớ ngắn hạn & dài hạn qua <strong>Chế độ Học (Learn)</strong> (Trắc nghiệm -> Gõ từ) và <strong>Game Ghép Thẻ</strong> luyện phản xạ nhanh.</p>
+          <div class="slide-tips-box">
+            <div class="tip-item"><i class="fa-solid fa-keyboard"></i> Nhấn các phím <kbd class="search-kbd">1</kbd>, <kbd class="search-kbd">2</kbd>, <kbd class="search-kbd">3</kbd>, <kbd class="search-kbd">4</kbd> để chọn đáp án trắc nghiệm.</div>
+            <div class="tip-item"><i class="fa-solid fa-rotate"></i> Hệ thống tự động lặp lại từ chưa thuộc cho tới khi bạn master!</div>
+          </div>
+        </div>
+
+        <!-- Slide 5 -->
+        <div class="onboarding-slide" data-step="5">
+          <div class="slide-icon-wrapper" style="background: rgba(236, 72, 153, 0.15); color: #ec4899;">
+            <i class="fa-solid fa-plus-circle"></i>
+          </div>
+          <h3>💡 Đóng Góp Từ Vựng & Xuất/Khôi Phục Tiến Độ</h3>
+          <p>Bạn có thể đóng góp từ vựng mới cho ứng dụng thông qua nút <strong>Góp từ vựng</strong> hoặc sao lưu tiến độ học ra file JSON để nạp sang máy khác.</p>
+          <div class="slide-tips-box">
+            <div class="tip-item"><i class="fa-solid fa-cloud-arrow-up"></i> Tự động đồng bộ và lưu tiến độ an toàn.</div>
+            <div class="tip-item"><i class="fa-solid fa-circle-question"></i> Bạn có thể xem lại Hướng dẫn này bất cứ lúc nào qua nút <strong>Hướng dẫn ❓</strong> ở Sidebar.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Controls -->
+      <div class="onboarding-footer">
+        <label class="dont-show-again">
+          <input type="checkbox" id="chk-dont-show-onboarding" />
+          <span>Không hiển thị lại hướng dẫn này lần sau</span>
+        </label>
+        
+        <div class="onboarding-nav-btns">
+          <button type="button" class="btn-secondary" id="btn-onboarding-skip">Bỏ qua</button>
+          <button type="button" class="btn-secondary hidden" id="btn-onboarding-prev"><i class="fa-solid fa-arrow-left"></i> Quay lại</button>
+          <button type="button" class="btn-primary" id="btn-onboarding-next">Tiếp theo <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
       </div>
     </div>
   </div>

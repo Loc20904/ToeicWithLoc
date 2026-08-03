@@ -172,8 +172,32 @@ const DOM = {
   statLearnedWords: document.getElementById('stat-learned-words'),
   headerTopicTitle: document.getElementById('header-topic-title'),
   globalSearch: document.getElementById('global-search'),
+  btnClearSearch: document.getElementById('btn-clear-search'),
+  searchKbd: document.getElementById('search-kbd'),
   themeToggle: document.getElementById('theme-toggle'),
   voiceSpeedSelect: document.getElementById('voice-speed-select'),
+
+  // All Vocab View DOM
+  navAllVocab: document.getElementById('nav-all-vocab'),
+  sidebarAllVocabCount: document.getElementById('sidebar-all-vocab-count'),
+  viewAllVocab: document.getElementById('view-all-vocab'),
+  btnAllVocabContribute: document.getElementById('btn-all-vocab-contribute'),
+  allVocabTopicFilter: document.getElementById('all-vocab-topic-filter'),
+  allVocabStatusFilter: document.getElementById('all-vocab-status-filter'),
+  allVocabSort: document.getElementById('all-vocab-sort'),
+  allVocabFilteredCount: document.getElementById('all-vocab-filtered-count'),
+  allVocabTotalCount: document.getElementById('all-vocab-total-count'),
+  allVocabGrid: document.getElementById('all-vocab-grid'),
+
+  // Onboarding Tutorial DOM
+  modalOnboarding: document.getElementById('modal-onboarding'),
+  btnCloseOnboarding: document.getElementById('btn-close-onboarding'),
+  btnOpenTutorialNav: document.getElementById('nav-tutorial'),
+  btnOpenTutorialHeader: document.getElementById('btn-open-tutorial-header'),
+  chkDontShowOnboarding: document.getElementById('chk-dont-show-onboarding'),
+  btnOnboardingSkip: document.getElementById('btn-onboarding-skip'),
+  btnOnboardingPrev: document.getElementById('btn-onboarding-prev'),
+  btnOnboardingNext: document.getElementById('btn-onboarding-next'),
 
   // Flashcard DOM
   flashcard: document.getElementById('flashcard'),
@@ -304,6 +328,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadDataset();
   await loadProgressFromBackend();
 
+  updateStarredCountsUI();
+  const activeView = document.querySelector('.view-section.active');
+  if (activeView && activeView.id === 'view-all-vocab') {
+    renderAllVocabView();
+  }
+
   window.addEventListener('beforeunload', () => {
     syncProgressToBackend();
   });
@@ -334,13 +364,29 @@ function updateThemeIcon(theme) {
 async function loadDataset() {
   try {
     const customData = localStorage.getItem('toeic_custom_dataset');
+    let loadedData = null;
     if (customData) {
-      state.topics = JSON.parse(customData);
-    } else {
-      const response = await fetch('data/toeic_topics.json');
-      state.topics = await response.json();
+      try {
+        const parsed = JSON.parse(customData);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          loadedData = parsed;
+        }
+      } catch (e) {}
     }
+    
+    if (!loadedData) {
+      const response = await fetch('data/toeic_topics.json');
+      loadedData = await response.json();
+    }
+
+    state.topics = loadedData || [];
     renderDashboard();
+    updateStarredCountsUI();
+
+    const activeView = document.querySelector('.view-section.active');
+    if (activeView && activeView.id === 'view-all-vocab') {
+      renderAllVocabView();
+    }
   } catch (error) {
     console.error('Lỗi khi tải dữ liệu từ vựng:', error);
   }
@@ -412,6 +458,9 @@ function getFilteredWordList(topic = state.currentTopic, filterMode = state.stud
 function updateStarredCountsUI() {
   const totalStarred = state.starredWords.size;
   if (DOM.sidebarStarredCount) DOM.sidebarStarredCount.textContent = totalStarred;
+
+  const totalAllWords = state.topics ? state.topics.flatMap(t => t.words).length : 0;
+  if (DOM.sidebarAllVocabCount) DOM.sidebarAllVocabCount.textContent = totalAllWords;
 
   // Update study action counts in Starred View
   const fcCountEl = document.getElementById('starred-count-fc');
@@ -735,6 +784,7 @@ function switchView(viewId) {
   if (activeMenuItem) activeMenuItem.classList.add('active');
 
   // View Specific Triggers
+  if (viewId === 'all-vocab') renderAllVocabView();
   if (viewId === 'starred') {
     state.currentTopic = getVirtualStarredTopic();
     state.studyFilterMode = 'starred';
@@ -747,6 +797,250 @@ function switchView(viewId) {
   if (viewId === 'match') startMatchGame();
 
   updateStarredCountsUI();
+}
+
+// Helper to escape HTML characters for safe rendering
+function escapeHTML(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/[&<>"']/g, match => {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    return map[match];
+  });
+}
+
+// Helper to highlight matching text in search results
+function highlightText(text, query) {
+  if (text === null || text === undefined) return '';
+  const str = String(text);
+  if (!query) return escapeHTML(str);
+  const safeText = escapeHTML(str);
+  const regex = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+  return safeText.replace(regex, '<mark class="highlight-text">$1</mark>');
+}
+
+// Render All Vocabulary View (#view-all-vocab)
+function renderAllVocabView() {
+  const container = DOM.allVocabGrid;
+  if (!container) return;
+
+  const allWordsWithTopic = [];
+  if (state.topics) {
+    state.topics.forEach(t => {
+      t.words.forEach(w => {
+        allWordsWithTopic.push({
+          ...w,
+          topic_id: t.topic_id,
+          topic_name: t.topic_name,
+          topic_icon: t.icon || '📚'
+        });
+      });
+    });
+  }
+
+  // Populate Topic Filter options dynamically
+  if (DOM.allVocabTopicFilter && state.topics && state.topics.length > 0) {
+    if (DOM.allVocabTopicFilter.options.length !== state.topics.length + 1) {
+      const currentVal = DOM.allVocabTopicFilter.value || 'all';
+      DOM.allVocabTopicFilter.innerHTML = '<option value="all">Tất cả học phần</option>';
+      state.topics.forEach(t => {
+        const opt = document.createElement('option');
+        opt.value = t.topic_id;
+        opt.textContent = `${t.icon || '📚'} ${t.topic_name} (${t.words.length})`;
+        DOM.allVocabTopicFilter.appendChild(opt);
+      });
+      DOM.allVocabTopicFilter.value = currentVal;
+    }
+  }
+
+  const query = (DOM.globalSearch ? DOM.globalSearch.value.toLowerCase().trim() : '');
+  const selectedTopic = DOM.allVocabTopicFilter ? DOM.allVocabTopicFilter.value : 'all';
+  const selectedStatus = DOM.allVocabStatusFilter ? DOM.allVocabStatusFilter.value : 'all';
+  const selectedSort = DOM.allVocabSort ? DOM.allVocabSort.value : 'default';
+
+  let filtered = allWordsWithTopic.filter(word => {
+    // Topic filter (String conversion to handle number vs string topic_id)
+    if (selectedTopic !== 'all' && String(word.topic_id) !== String(selectedTopic)) {
+      return false;
+    }
+
+    // Status filter
+    if (selectedStatus === 'learned' && !state.learnedWords.has(word.id)) return false;
+    if (selectedStatus === 'unlearned' && state.learnedWords.has(word.id)) return false;
+    if (selectedStatus === 'starred' && !state.starredWords.has(word.id)) return false;
+
+    // Search query filter
+    if (query) {
+      const synText = getSynonymText(word);
+      const termMatch = word.term ? String(word.term).toLowerCase().includes(query) : false;
+      const defMatch = word.definition ? String(word.definition).toLowerCase().includes(query) : false;
+      const ipaMatch = word.ipa ? String(word.ipa).toLowerCase().includes(query) : false;
+      const synMatch = synText ? synText.toLowerCase().includes(query) : false;
+      const exEnMatch = word.example_en ? String(word.example_en).toLowerCase().includes(query) : false;
+      const exViMatch = word.example_vi ? String(word.example_vi).toLowerCase().includes(query) : false;
+      const topicMatch = word.topic_name ? String(word.topic_name).toLowerCase().includes(query) : false;
+
+      return termMatch || defMatch || ipaMatch || synMatch || exEnMatch || exViMatch || topicMatch;
+    }
+
+    return true;
+  });
+
+  // Sorting
+  if (selectedSort === 'az') {
+    filtered.sort((a, b) => a.term.localeCompare(b.term));
+  } else if (selectedSort === 'za') {
+    filtered.sort((a, b) => b.term.localeCompare(a.term));
+  } else if (selectedSort === 'topic') {
+    filtered.sort((a, b) => a.topic_name.localeCompare(b.topic_name) || a.term.localeCompare(b.term));
+  }
+
+  // Update Count Badges
+  if (DOM.allVocabFilteredCount) DOM.allVocabFilteredCount.textContent = filtered.length;
+  if (DOM.allVocabTotalCount) DOM.allVocabTotalCount.textContent = allWordsWithTopic.length;
+  if (DOM.sidebarAllVocabCount) DOM.sidebarAllVocabCount.textContent = allWordsWithTopic.length;
+
+  if (filtered.length === 0) {
+    container.innerHTML = `
+      <div class="empty-all-vocab-state">
+        <i class="fa-solid fa-magnifying-glass empty-icon"></i>
+        <h3>Không tìm thấy từ vựng nào phù hợp</h3>
+        <p>Thử điều chỉnh lại từ khóa tìm kiếm hoặc bỏ chọn các bộ lọc học phần, trạng thái.</p>
+        <button class="btn-primary" id="btn-reset-all-vocab-filters">
+          <i class="fa-solid fa-rotate-left"></i> Đặt lại tất cả bộ lọc
+        </button>
+      </div>
+    `;
+    const btnReset = container.querySelector('#btn-reset-all-vocab-filters');
+    if (btnReset) {
+      btnReset.addEventListener('click', () => {
+        if (DOM.globalSearch) DOM.globalSearch.value = '';
+        if (DOM.btnClearSearch) DOM.btnClearSearch.classList.add('hidden');
+        if (DOM.allVocabTopicFilter) DOM.allVocabTopicFilter.value = 'all';
+        if (DOM.allVocabStatusFilter) DOM.allVocabStatusFilter.value = 'all';
+        if (DOM.allVocabSort) DOM.allVocabSort.value = 'default';
+        renderAllVocabView();
+      });
+    }
+    return;
+  }
+
+  container.innerHTML = '';
+  filtered.forEach(word => {
+    try {
+      const isStarred = state.starredWords.has(word.id) || state.starredWords.has(String(word.id));
+      const isLearned = state.learnedWords.has(word.id) || state.learnedWords.has(String(word.id));
+      const synText = getSynonymText(word);
+
+      const cardEl = document.createElement('div');
+      cardEl.className = `all-vocab-card ${isLearned ? 'is-learned' : ''} ${isStarred ? 'is-starred' : ''}`;
+
+      cardEl.innerHTML = `
+        <div class="vocab-card-header">
+          <span class="vocab-topic-pill" title="Học phần: ${escapeHTML(word.topic_name)}">
+            <i class="fa-solid fa-folder"></i> ${escapeHTML(word.topic_name)}
+          </span>
+          <div class="vocab-card-actions">
+            <button class="btn-card-action btn-card-star ${isStarred ? 'active' : ''}" title="${isStarred ? 'Bỏ đánh dấu' : 'Đánh dấu từ quan trọng'}">
+              <i class="fa-${isStarred ? 'solid' : 'regular'} fa-star"></i>
+            </button>
+            <button class="btn-card-action btn-card-learned ${isLearned ? 'active' : ''}" title="${isLearned ? 'Đã thuộc (Nhấp để hủy)' : 'Đánh dấu đã thuộc'}">
+              <i class="fa-solid fa-check"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="vocab-card-body">
+          <div class="vocab-term-row">
+            <span class="vocab-term">${highlightText(word.term, query)}</span>
+            ${word.pos ? `<span class="vocab-pos-badge">${escapeHTML(word.pos)}</span>` : ''}
+            <button class="btn-card-audio" title="Nghe phát âm">
+              <i class="fa-solid fa-volume-high"></i>
+            </button>
+          </div>
+          ${word.ipa ? `<div class="vocab-ipa">${highlightText(word.ipa, query)}</div>` : ''}
+          <div class="vocab-def">${highlightText(word.definition, query)}</div>
+          ${synText ? `<div class="vocab-synonym"><i class="fa-solid fa-equals"></i> ${highlightText(synText, query)}</div>` : ''}
+          ${word.example_en ? `
+            <div class="vocab-example-box">
+              <div class="example-en">"${highlightText(word.example_en, query)}"</div>
+              ${word.example_vi ? `<div class="example-vi">${highlightText(word.example_vi, query)}</div>` : ''}
+            </div>
+          ` : ''}
+        </div>
+
+        <div class="vocab-card-footer">
+          <button class="btn-card-study" title="Mở học phần này trên Flashcard">
+            <i class="fa-solid fa-clone"></i> Học Flashcard
+          </button>
+          <span class="vocab-id-tag">ID: ${escapeHTML(word.id)}</span>
+        </div>
+      `;
+
+      // Audio click
+      const btnAudio = cardEl.querySelector('.btn-card-audio');
+      if (btnAudio) {
+        btnAudio.addEventListener('click', (e) => {
+          e.stopPropagation();
+          speakTerm(word.term);
+        });
+      }
+
+      // Star toggle
+      const btnStar = cardEl.querySelector('.btn-card-star');
+      if (btnStar) {
+        btnStar.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (state.starredWords.has(word.id)) {
+            state.starredWords.delete(word.id);
+          } else {
+            state.starredWords.add(word.id);
+          }
+          localStorage.setItem('toeic_starred_words', JSON.stringify([...state.starredWords]));
+          syncProgressToBackend();
+          renderAllVocabView();
+          updateStarredCountsUI();
+        });
+      }
+
+      // Learned toggle
+      const btnLearned = cardEl.querySelector('.btn-card-learned');
+      if (btnLearned) {
+        btnLearned.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (state.learnedWords.has(word.id)) {
+            state.learnedWords.delete(word.id);
+          } else {
+            state.learnedWords.add(word.id);
+          }
+          localStorage.setItem('toeic_learned_words', JSON.stringify([...state.learnedWords]));
+          syncProgressToBackend();
+          renderAllVocabView();
+          renderDashboard();
+        });
+      }
+
+      // Study Flashcard click
+      const btnStudy = cardEl.querySelector('.btn-card-study');
+      if (btnStudy) {
+        btnStudy.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const topicObj = state.topics.find(t => String(t.topic_id) === String(word.topic_id));
+          if (topicObj) {
+            state.currentTopic = topicObj;
+            state.currentWordList = topicObj.words;
+            state.currentIndex = topicObj.words.findIndex(w => String(w.id) === String(word.id));
+            if (state.currentIndex === -1) state.currentIndex = 0;
+            switchView('flashcards');
+            renderFlashcard();
+          }
+        });
+      }
+
+      container.appendChild(cardEl);
+    } catch (err) {
+      console.error('Error rendering word card:', word, err);
+    }
+  });
 }
 
 // Render Starred Words View (#view-starred)
@@ -1736,28 +2030,157 @@ function setupEventListeners() {
     renderNextLearnCard();
   });
 
-  // Global Search
-  DOM.globalSearch.addEventListener('input', (e) => {
-    const query = e.target.value.toLowerCase().trim();
-    if (!query) {
-      renderDashboard();
+  // Global Search logic -> Searches within All Vocab View
+  if (DOM.globalSearch) {
+    DOM.globalSearch.addEventListener('input', (e) => {
+      const query = e.target.value.trim();
+      if (query) {
+        if (DOM.btnClearSearch) DOM.btnClearSearch.classList.remove('hidden');
+      } else {
+        if (DOM.btnClearSearch) DOM.btnClearSearch.classList.add('hidden');
+      }
+
+      const activeView = document.querySelector('.view-section.active');
+      if (!activeView || activeView.id !== 'view-all-vocab') {
+        switchView('all-vocab');
+      } else {
+        renderAllVocabView();
+      }
+    });
+  }
+
+  if (DOM.btnClearSearch) {
+    DOM.btnClearSearch.addEventListener('click', () => {
+      if (DOM.globalSearch) DOM.globalSearch.value = '';
+      DOM.btnClearSearch.classList.add('hidden');
+      if (DOM.globalSearch) DOM.globalSearch.focus();
+      renderAllVocabView();
+    });
+  }
+
+  // All Vocab Filter listeners
+  if (DOM.allVocabTopicFilter) DOM.allVocabTopicFilter.addEventListener('change', renderAllVocabView);
+  if (DOM.allVocabStatusFilter) DOM.allVocabStatusFilter.addEventListener('change', renderAllVocabView);
+  if (DOM.allVocabSort) DOM.allVocabSort.addEventListener('change', renderAllVocabView);
+
+  // Contribute button in All Vocab view
+  if (DOM.btnAllVocabContribute) {
+    DOM.btnAllVocabContribute.addEventListener('click', () => {
+      DOM.modalFeedback.classList.remove('hidden');
+      if (DOM.tabBtnVocab) DOM.tabBtnVocab.click();
+    });
+  }
+
+  // Onboarding Tutorial Controls & Handlers
+  let currentOnboardingStep = 1;
+  const TOTAL_ONBOARDING_STEPS = 5;
+
+  const openOnboardingModal = (step = 1) => {
+    if (!DOM.modalOnboarding) return;
+    currentOnboardingStep = step;
+    updateOnboardingStepUI();
+    DOM.modalOnboarding.classList.remove('hidden');
+  };
+
+  const closeOnboardingModal = () => {
+    if (!DOM.modalOnboarding) return;
+    DOM.modalOnboarding.classList.add('hidden');
+    if (DOM.chkDontShowOnboarding && DOM.chkDontShowOnboarding.checked) {
+      localStorage.setItem('toeic_onboarding_completed', 'true');
+    }
+  };
+
+  const updateOnboardingStepUI = () => {
+    if (!DOM.modalOnboarding) return;
+
+    const dots = DOM.modalOnboarding.querySelectorAll('.step-dot');
+    dots.forEach(dot => {
+      const s = parseInt(dot.dataset.step, 10);
+      dot.classList.toggle('active', s === currentOnboardingStep);
+      dot.classList.toggle('completed', s < currentOnboardingStep);
+    });
+
+    const slides = DOM.modalOnboarding.querySelectorAll('.onboarding-slide');
+    slides.forEach(slide => {
+      const s = parseInt(slide.dataset.step, 10);
+      slide.classList.toggle('active', s === currentOnboardingStep);
+    });
+
+    if (DOM.btnOnboardingPrev) {
+      DOM.btnOnboardingPrev.classList.toggle('hidden', currentOnboardingStep === 1);
+    }
+
+    if (DOM.btnOnboardingNext) {
+      if (currentOnboardingStep === TOTAL_ONBOARDING_STEPS) {
+        DOM.btnOnboardingNext.innerHTML = `Bắt đầu học ngay! 🚀`;
+      } else {
+        DOM.btnOnboardingNext.innerHTML = `Tiếp theo <i class="fa-solid fa-arrow-right"></i>`;
+      }
+    }
+  };
+
+  // Auto-show tutorial on first visit
+  const isOnboardingCompleted = localStorage.getItem('toeic_onboarding_completed') === 'true';
+  if (!isOnboardingCompleted) {
+    setTimeout(() => {
+      openOnboardingModal(1);
+    }, 600);
+  }
+
+  if (DOM.btnOpenTutorialNav) DOM.btnOpenTutorialNav.addEventListener('click', () => openOnboardingModal(1));
+  if (DOM.btnOpenTutorialHeader) DOM.btnOpenTutorialHeader.addEventListener('click', () => openOnboardingModal(1));
+  if (DOM.btnCloseOnboarding) DOM.btnCloseOnboarding.addEventListener('click', closeOnboardingModal);
+  if (DOM.btnOnboardingSkip) DOM.btnOnboardingSkip.addEventListener('click', () => {
+    localStorage.setItem('toeic_onboarding_completed', 'true');
+    closeOnboardingModal();
+  });
+
+  if (DOM.btnOnboardingPrev) {
+    DOM.btnOnboardingPrev.addEventListener('click', () => {
+      if (currentOnboardingStep > 1) {
+        currentOnboardingStep--;
+        updateOnboardingStepUI();
+      }
+    });
+  }
+
+  if (DOM.btnOnboardingNext) {
+    DOM.btnOnboardingNext.addEventListener('click', () => {
+      if (currentOnboardingStep < TOTAL_ONBOARDING_STEPS) {
+        currentOnboardingStep++;
+        updateOnboardingStepUI();
+      } else {
+        localStorage.setItem('toeic_onboarding_completed', 'true');
+        closeOnboardingModal();
+      }
+    });
+  }
+
+  if (DOM.modalOnboarding) {
+    const dots = DOM.modalOnboarding.querySelectorAll('.step-dot');
+    dots.forEach(dot => {
+      dot.addEventListener('click', () => {
+        const s = parseInt(dot.dataset.step, 10);
+        if (s >= 1 && s <= TOTAL_ONBOARDING_STEPS) {
+          currentOnboardingStep = s;
+          updateOnboardingStepUI();
+        }
+      });
+    });
+  }
+
+  // Keyboard Shortcuts (Space, Enter, 1-4, Arrows, / for Search)
+  document.addEventListener('keydown', (e) => {
+    // 0. Shortcut '/' to focus search bar
+    if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      if (DOM.globalSearch) {
+        DOM.globalSearch.focus();
+        DOM.globalSearch.select();
+      }
       return;
     }
 
-    const filtered = state.topics.flatMap(t => t.words).filter(w => 
-      w.term.toLowerCase().includes(query) || w.definition.toLowerCase().includes(query)
-    );
-
-    if (filtered.length > 0) {
-      state.currentWordList = filtered;
-      state.currentIndex = 0;
-      switchView('flashcards');
-      renderFlashcard();
-    }
-  });
-
-  // Keyboard Shortcuts (Space, Enter, 1-4, Arrows)
-  document.addEventListener('keydown', (e) => {
     const activeView = document.querySelector('.view-section.active');
     if (!activeView) return;
 
