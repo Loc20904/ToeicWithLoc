@@ -92,6 +92,7 @@
             </button>
             <input type="file" id="file-input-progress" accept=".json" style="display: none;" />
           </div>
+          <span class="backup-note-text"><i class="fa-solid fa-circle-info"></i> Tiến độ lưu theo trình duyệt. Dùng <strong>Xuất Tiến Độ</strong> để sao lưu sang máy khác!</span>
         </div>
 
         <button class="btn-sidebar-feedback" id="btn-open-feedback">
@@ -160,6 +161,15 @@
               <span class="stat-number" id="stat-learned-words">0</span>
               <span class="stat-label">Đã thuộc</span>
             </div>
+          </div>
+        </div>
+
+        <!-- Non-Tech User Storage Notice Banner -->
+        <div class="storage-notice-card">
+          <div class="notice-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+          <div class="notice-text">
+            <strong>📌 Lưu ý quan trọng về tiến độ học tập:</strong>
+            <span>Trang web tự động lưu tiến độ của bạn trên <em>trình duyệt hiện tại</em> (Chrome, Safari, Edge...). Khi đổi sang trình duyệt khác hoặc máy tính khác, tiến độ sẽ không tự động di chuyển theo. Bạn hãy dùng tính năng <strong>Xuất Tiến Độ / Khôi Phục</strong> ở góc dưới Sidebar để sao lưu và nạp tiến độ sang thiết bị mới nhé!</span>
           </div>
         </div>
 
@@ -867,8 +877,11 @@
           <h3>💡 Đóng Góp Từ Vựng & Xuất/Khôi Phục Tiến Độ</h3>
           <p>Bạn có thể đóng góp từ vựng mới cho ứng dụng thông qua nút <strong>Góp từ vựng</strong> hoặc sao lưu tiến độ học ra file JSON để nạp sang máy khác.</p>
           <div class="slide-tips-box">
-            <div class="tip-item"><i class="fa-solid fa-cloud-arrow-up"></i> Tự động đồng bộ và lưu tiến độ an toàn.</div>
-            <div class="tip-item"><i class="fa-solid fa-circle-question"></i> Bạn có thể xem lại Hướng dẫn này bất cứ lúc nào qua nút <strong>Hướng dẫn ❓</strong> ở Sidebar.</div>
+            <div class="tip-item"><i class="fa-solid fa-cloud-arrow-up"></i> Tự động đồng bộ và lưu tiến độ trên trình duyệt.</div>
+            <div class="tip-item highlight-warning" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3); padding: 8px 12px; border-radius: 8px; margin-top: 4px;">
+              <i class="fa-solid fa-triangle-exclamation" style="color: var(--accent-warning);"></i>
+              <span><strong>Lưu ý quan trọng:</strong> Tiến độ được lưu riêng cho từng trình duyệt. Dùng nút <strong>Xuất Tiến Độ (.json)</strong> nếu bạn muốn di chuyển tiến độ sang máy tính/trình duyệt khác nhé!</span>
+            </div>
           </div>
         </div>
       </div>
