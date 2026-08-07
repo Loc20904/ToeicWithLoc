@@ -1722,9 +1722,6 @@ function setupSpeechSynthesis() {
 function speakTerm(text) {
   if (!('speechSynthesis' in window)) return;
 
-  // Hủy phát âm hiện tại trước khi đọc từ mới
-  window.speechSynthesis.cancel();
-
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'en-US';
   utterance.rate = state.speechSpeed;
@@ -1734,10 +1731,24 @@ function speakTerm(text) {
   const englishVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Samantha')));
   if (englishVoice) utterance.voice = englishVoice;
 
-  try {
-    window.speechSynthesis.speak(utterance);
-  } catch (e) {
-    console.error("SpeechSynthesis speak error:", e);
+  // Nếu đang nói, ta cần cancel và đợi một khoảng thời gian ngắn (200ms) để hệ thống reset trạng thái,
+  // tránh lỗi đơ/mất tiếng của trình duyệt (Chromium/Webkit bug).
+  // Nếu không nói, phát âm ngay lập tức để không làm mất "user gesture context" trên Safari di động.
+  if (window.speechSynthesis.speaking) {
+    window.speechSynthesis.cancel();
+    setTimeout(() => {
+      try {
+        window.speechSynthesis.speak(utterance);
+      } catch (e) {
+        console.error("SpeechSynthesis speak error:", e);
+      }
+    }, 200);
+  } else {
+    try {
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {
+      console.error("SpeechSynthesis speak error:", e);
+    }
   }
 }
 
