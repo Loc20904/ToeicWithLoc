@@ -1685,27 +1685,60 @@ function showLearnFeedback(word, userTypedVal = "") {
 // ----------------------------------------------------
 // 3. AUDIO TTS (WEB SPEECH API)
 // ----------------------------------------------------
+let voicesList = [];
+
 function setupSpeechSynthesis() {
   DOM.voiceSpeedSelect.value = state.speechSpeed;
   DOM.voiceSpeedSelect.addEventListener('change', (e) => {
     state.speechSpeed = parseFloat(e.target.value);
     localStorage.setItem('toeic_speech_speed', state.speechSpeed.toString());
   });
+
+  // Tải trước danh sách giọng nói để tránh bị rỗng ở lần gọi đầu tiên
+  if ('speechSynthesis' in window) {
+    voicesList = window.speechSynthesis.getVoices();
+    if (window.speechSynthesis.onvoiceschanged !== undefined) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        voicesList = window.speechSynthesis.getVoices();
+      };
+    }
+
+    // Kích hoạt (Unlock) hệ thống âm thanh trên thiết bị di động ở tương tác đầu tiên của người dùng
+    const unlockSpeech = () => {
+      try {
+        const silentUtterance = new SpeechSynthesisUtterance('');
+        window.speechSynthesis.speak(silentUtterance);
+      } catch (e) {
+        console.error("Speech Synthesis unlock failed:", e);
+      }
+      window.removeEventListener('click', unlockSpeech);
+      window.removeEventListener('touchstart', unlockSpeech);
+    };
+    window.addEventListener('click', unlockSpeech);
+    window.addEventListener('touchstart', unlockSpeech);
+  }
 }
 
 function speakTerm(text) {
   if (!('speechSynthesis' in window)) return;
 
+  // Hủy phát âm hiện tại trước khi đọc từ mới
   window.speechSynthesis.cancel();
+
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = 'en-US';
   utterance.rate = state.speechSpeed;
 
-  const voices = window.speechSynthesis.getVoices();
+  // Lấy giọng đọc tiếng Anh chất lượng cao
+  const voices = voicesList.length > 0 ? voicesList : window.speechSynthesis.getVoices();
   const englishVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Google') || v.name.includes('Natural') || v.name.includes('Samantha')));
   if (englishVoice) utterance.voice = englishVoice;
 
-  window.speechSynthesis.speak(utterance);
+  try {
+    window.speechSynthesis.speak(utterance);
+  } catch (e) {
+    console.error("SpeechSynthesis speak error:", e);
+  }
 }
 
 // ----------------------------------------------------
